@@ -30,8 +30,16 @@ def configuration_root(config_file: str, agent_class=YamlAgent):
                 self._agent.create(cls)
             print(self.__dict__)
 
+        def save(self):
+            self._agent.save(self)
+
+        def load(self):
+            self._agent.load(cls, self)
+
         decorated_init.__name__ = '__init__'
         cls.__init__ = decorated_init
+        cls.save = save
+        cls.load = load
         return cls
 
     return decorator
@@ -50,7 +58,7 @@ class AppConfig:
     not_typed = 70
     nested1: NestedConfig = NestedConfig()
     database_host: str = 'localhost'
-    database_port: str = '5432'
+    database_port: int = 5432
     database_user: str = 'admin'
     database_password: str = 'default_password'
 

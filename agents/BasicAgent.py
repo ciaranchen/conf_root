@@ -4,7 +4,7 @@ from dataclasses import dataclass, fields, MISSING, is_dataclass
 @dataclass
 class BasicAgent:
     """
-    类中的两个函数主要是处理递归问题。
+    类中的函数主要是处理递归问题。
     """
     location: str
 
@@ -57,3 +57,20 @@ class BasicAgent:
         # 这里可能 raise TypeError: missing required positional argument
         # 认为应该不作处理，让它报错。
         return final_obj
+
+    @staticmethod
+    def dataclass_to_dict(obj):
+        """
+        需避开_agent的预留值
+        :param obj:
+        :return:
+        """
+        res = {}
+        for k, v in obj.__dict__.items():
+            if k == '_agent':
+                continue
+            if is_dataclass(v):
+                res[k] = BasicAgent.dataclass_to_dict(v)
+            else:
+                res[k] = v
+        return res

@@ -19,4 +19,8 @@ class YamlAgent(BasicAgent):
         self.dict_to_dataclass(data, cls, obj)
 
     def save(self, obj):
-        pass
+        data_dict = self.dataclass_to_dict(obj)
+        
+        # 将dict转换为YAML并写入文件
+        with open(self.location, "w") as yaml_file:
+            yaml.dump(data_dict, yaml_file)
