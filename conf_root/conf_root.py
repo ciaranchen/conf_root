@@ -4,7 +4,7 @@ import os
 from agents.YamlAgent import YamlAgent
 
 
-def configuration_root(config_file: str, agent_class=YamlAgent):
+def configuration(config_file: str, agent_class=YamlAgent):
     """
     类装饰器，用于从INI配置文件中加载配置或按照dataclass的默认值新建文件，
     并确保类实例化时使用这些配置。
@@ -43,24 +43,25 @@ def configuration_root(config_file: str, agent_class=YamlAgent):
     return decorator
 
 
-@dataclass
-class NestedConfig:
-    n1: str = '1'
+if __name__ == '__main__':
+    @dataclass
+    class NestedConfig:
+        n1: str = '1'
 
 
-# 使用装饰器
-@configuration_root('settings.yaml')
-@dataclass
-class AppConfig:
-    not_default: str
-    not_typed = 70
-    nested1: NestedConfig = NestedConfig()
-    database_host: str = 'localhost'
-    database_port: int = 5432
-    database_user: str = 'admin'
-    database_password: str = 'default_password'
+    # 使用装饰器
+    @configuration('settings.yaml')
+    @dataclass
+    class AppConfig:
+        not_default: str
+        not_typed = 70
+        nested1: NestedConfig = NestedConfig()
+        database_host: str = 'localhost'
+        database_port: int = 5432
+        database_user: str = 'admin'
+        database_password: str = 'default_password'
 
 
-# 装饰器执行后，无论'settings.yaml'是否存在，在实例化时都会尝试从文件中读取值并按需使用默认值初始化
-app_config = AppConfig('123')
-print(app_config.__dict__)
+    # 装饰器执行后，无论'settings.yaml'是否存在，在实例化时都会尝试从文件中读取值并按需使用默认值初始化
+    app_config = AppConfig('123')
+    print(app_config.__dict__)
