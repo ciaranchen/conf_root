@@ -20,7 +20,6 @@ def configuration_root(config_file: str, agent_class=YamlAgent):
         def decorated_init(self, *args, **kwargs):
             origin_init(self, *args, **kwargs)
             self._agent = agent_class(config_file)
-            print(self.__dict__)
 
             if os.path.exists(config_file):
                 # 如果文件已存在，正常处理读取和实例化逻辑
@@ -28,7 +27,6 @@ def configuration_root(config_file: str, agent_class=YamlAgent):
             else:
                 # 若文件不存在，根据dataclass的默认值创建
                 self._agent.create(cls)
-            print(self.__dict__)
 
         def save(self):
             self._agent.save(self)
