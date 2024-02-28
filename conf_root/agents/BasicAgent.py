@@ -20,6 +20,11 @@ class BasicAgent:
                     res[field.name] = BasicAgent.dataclass_default_dict(field.default)
                 else:
                     res[field.name] = field.default
+            if field.default_factory is not MISSING:
+                if is_dataclass(field.type):
+                    res[field.name] = BasicAgent.dataclass_default_dict(field.default_factory)
+                else:
+                    res[field.name] = field.default_factory
         return res
 
     @staticmethod
