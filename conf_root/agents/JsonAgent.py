@@ -3,6 +3,8 @@ import json
 
 
 class JsonAgent(BasicAgent):
+    default_extension = 'json'
+
     def create(self, cls):
         # 将dataclass默认值转换为dict，便于序列化
         default_dict = self.dataclass_default_dict(cls)

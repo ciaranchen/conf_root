@@ -4,11 +4,13 @@ import os
 from .agents.YamlAgent import YamlAgent
 
 
-def configuration(config_file: str, agent_class=YamlAgent):
+def configuration(config_file: str=None, agent_class=YamlAgent):
     """
     类装饰器，用于从INI配置文件中加载配置或按照dataclass的默认值新建文件，
     并确保类实例化时使用这些配置。
     """
+    if config_file is None:
+        config_file = f"config.{agent_class.default_extension}"
 
     def decorator(cls):
         if not is_dataclass(cls):

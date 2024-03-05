@@ -7,6 +7,7 @@ class BasicAgent:
     类中的函数主要是处理递归问题。
     """
     location: str
+    default_extension: str = 'undefined'
 
     @staticmethod
     def dataclass_default_dict(cls):

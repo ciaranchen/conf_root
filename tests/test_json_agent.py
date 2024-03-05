@@ -34,6 +34,7 @@ class TestConfig(unittest.TestCase):
 
         # 外部修改配置文件后读取，结果应为配置文件内的设置。
         # 打开文件，读取内容
+        self.assertTrue(os.path.exists(self.location))
         with open(self.location, 'r') as file:
             content = file.read()
         self.assertTrue('localhost' in content)
@@ -61,6 +62,7 @@ class TestConfig(unittest.TestCase):
 
         # 外部修改配置文件后读取，结果应为配置文件内的设置。
         # 打开文件，读取内容
+        self.assertTrue(os.path.exists(self.location))
         with open(self.location, 'r') as file:
             content = file.read()
         self.assertTrue('192.168.1.1' in content)
