@@ -26,7 +26,8 @@ class MyTestCase(unittest.TestCase):
             pass  # 如果文件不存在，忽略错误（也可以根据需求抛出异常）
 
     def test_default_yaml_configuration(self):
-        @configuration()
+        # 测试直接使用configuration而不带参数的情况。
+        @configuration
         @dataclass
         class AppConfig:
             something: int = 42
@@ -38,7 +39,7 @@ class MyTestCase(unittest.TestCase):
         self.assertTrue('42' in content)
 
     def test_default_json_configuration(self):
-        @configuration(agent_class=JsonAgent)
+        @configuration(agent=JsonAgent)
         @dataclass
         class AppConfig:
             something: int = 42

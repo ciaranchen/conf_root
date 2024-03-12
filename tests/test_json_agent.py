@@ -26,7 +26,7 @@ class TestConfig(unittest.TestCase):
             pass  # 如果文件不存在，忽略错误（也可以根据需求抛出异常）
 
     def test_create(self):
-        DecoratedConfig = configuration(self.location, JsonAgent)(AppConfig)
+        DecoratedConfig = configuration(self.location, agent=JsonAgent)(AppConfig)
         app_config = DecoratedConfig('admin')
         self.assertEqual(app_config.database_host, 'localhost')
         self.assertEqual(app_config.database_port, 5432)
@@ -48,13 +48,13 @@ class TestConfig(unittest.TestCase):
         with open(self.location, 'w') as file:
             file.write(content)
 
-        DecoratedConfig = configuration(self.location, JsonAgent)(AppConfig)
+        DecoratedConfig = configuration(self.location, agent=JsonAgent)(AppConfig)
         app_config = DecoratedConfig('admin')
         self.assertEqual(app_config.database_host, '127.0.0.1')
         self.assertEqual(app_config.database_port, 5432)
 
     def test_save(self):
-        DecoratedConfig = configuration(self.location, JsonAgent)(AppConfig)
+        DecoratedConfig = configuration(self.location, agent=JsonAgent)(AppConfig)
         app_config = DecoratedConfig('admin')
         app_config.database_host = '192.168.1.1'
         app_config.database_port = 3309
