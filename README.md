@@ -62,3 +62,19 @@ class AppConfig:
 
 app_config = AppConfig()
 ```
+
+```python
+import argparse
+from conf_root import configuration, create_dataclass_from_argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--dataSet", type=str, default="wiki",
+                    help="cora, citeseer, wiki, corafull, FedDBLP")
+# ...
+parser.add_argument("--dropout", type=float, default=0.5)
+ArgsClass = create_dataclass_from_argparse(parser)
+ArgsClass = configuration(ArgsClass)
+args = parser.parse_args()
+args_dataclass = ArgsClass(**vars(args))
+print(args_dataclass)
+```
