@@ -10,8 +10,9 @@ class JsonAgent(BasicAgent):
         default_dict = self.dataclass_default_dict(cls)
 
         # 将dict转换为YAML并写入文件
-        with open(self.location, "w") as file:
-            json.dump(default_dict, file)
+        if len(default_dict.keys()) > 0:
+            with open(self.location, "w") as file:
+                json.dump(default_dict, file)
 
     def load(self, cls, obj):
         with open(self.location, encoding='utf-8') as file:

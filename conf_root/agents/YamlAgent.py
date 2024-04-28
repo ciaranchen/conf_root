@@ -10,8 +10,9 @@ class YamlAgent(BasicAgent):
         default_dict = self.dataclass_default_dict(cls)
 
         # 将dict转换为YAML并写入文件
-        with open(self.location, "w") as yaml_file:
-            yaml.dump(default_dict, yaml_file)
+        if len(default_dict.keys()) > 0:
+            with open(self.location, "w") as yaml_file:
+                yaml.dump(default_dict, yaml_file)
 
     def load(self, cls, obj):
         with open(self.location, encoding='utf-8') as yaml_file:
