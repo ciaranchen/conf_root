@@ -5,7 +5,7 @@
 基于dataclass的符合逻辑的配置文件取用方式。主要功能如下：
 
 1. 封装dataclass到配置文件。
-2. 将argparse的设置转换为配置文件。这在改动一些科研项目的代码时很有用。
+2. 将argparse的设置转换为配置文件。这允许在科研项目的代码中能快速地通过配置文件运行代码。
 
 ## 封装dataclass
 
@@ -63,11 +63,11 @@ args = arg_config.get_namespace(args_dataclass2, args)
 
 > note: 在默认产生的dataclass对象中，优先使用 命令行参数 > 配置文件值 > 默认值。可通过 load() 方式使用配置文件值覆盖命令行参数。
 
-argparse 到 dataclass 目前仅支持常见的参数，具体限制如下：
+argparse 到 dataclass 目前仅支持常见的参数。这不意味着有不支持的命令行参数会导致报错，这些参数将会被忽略。具体限制如下：
 
 1. Argparse 的 action 必须为 'store(即默认值)', 'store_const', 'store_true', 'store_false' 之一。
-2. Argparse 的 nargs 必须为 None 或 0, 1。
-3. Argparse 的 choices 和 required 将会被忽略。
+2. Argparse 的 nargs 不支持。
+3. Argparse 中 choices 和 required 的限制将会被忽略。
 
 ## More Example
 
