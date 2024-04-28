@@ -56,7 +56,18 @@ ArgsClass = configuration(arg_config.dataclass)
 args_dataclass = ArgsClass(**vars(args))
 # 如果parser中包含不支持的参数，使用下面的方法过滤
 args_dataclass2 = ArgsClass(**arg_config.filter_unsupported(args))
+
+# 或者使用配置文件值优先的参数解析结果，可替换原本的args
+args = arg_config.get_namespace(args_dataclass2, args)
 ```
+
+> note: 在默认产生的dataclass对象中，优先使用 命令行参数 > 配置文件值 > 默认值。可通过 load() 方式使用配置文件值覆盖命令行参数。
+
+argparse 到 dataclass 目前仅支持常见的参数，具体限制如下：
+
+1. Argparse 的 action 必须为 'store(即默认值)', 'store_const', 'store_true', 'store_false' 之一。
+2. Argparse 的 nargs 必须为 None 或 0, 1。
+3. Argparse 的 choices 和 required 将会被忽略。
 
 ## More Example
 

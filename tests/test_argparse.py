@@ -83,17 +83,3 @@ class TestArgparse(unittest.TestCase):
         self.assertFalse(hasattr(args_dataclass, 'count'))
         self.assertTrue(args_dataclass.verbose)
         self.assertEqual(args_dataclass.foo, 42)
-
-    def test_temp(self):
-        parser = argparse.ArgumentParser(description="Test action")
-        parser.add_argument("--verbose", action="store_true", help="Enable verbose mode")
-        parser.add_argument('--foo', action='store_const', const=42)
-        parser.add_argument("--items", nargs='+', type=str, help="List of items")
-        parser.add_argument('--count', '-c', action='count', default=0)
-
-        arg_config = ArgparseConfiguration.from_argparse(parser)
-        ArgsClass = configuration(self.location)(arg_config.dataclass)
-
-
-        args = parser.parse_args(['--items', 'a', 'b'])
-        args_dataclass = ArgsClass(**arg_config.filter_unsupported(args))

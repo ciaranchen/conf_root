@@ -1,4 +1,5 @@
 import argparse
+import copy
 import dataclasses
 from dataclasses import make_dataclass, field, MISSING
 
@@ -59,8 +60,8 @@ class ArgparseConfiguration:
         # dataclass_fields 需排序
         dataclass_fields = sorted(dataclass_fields, key=lambda x: isinstance(x[2].default, dataclasses._MISSING_TYPE),
                                   reverse=True)
-        for f in dataclass_fields:
-            print(f)
+        # for f in dataclass_fields:
+        #     print(f)
         res = cls()
         cls.dataclass = make_dataclass(class_name, dataclass_fields)
         cls.unsupported = unsupported
@@ -71,4 +72,18 @@ class ArgparseConfiguration:
         for key, val in vars(namespace).items():
             if key not in self.unsupported:
                 res[key] = val
+        return res
+
+    def get_namespace(self, dataclass, old_namespace):
+        # 仅加载配置文件的dataclass object
+        object = (copy.copy(dataclass))
+        object.load()
+        print(object)
+
+        res = argparse.Namespace()
+        for key, val in vars(old_namespace).items():
+            if key in self.unsupported:
+                setattr(res, key, val)
+            else:
+                setattr(res, key, getattr(object, key))
         return res
