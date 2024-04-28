@@ -2,8 +2,7 @@ import argparse
 import os
 import unittest
 import yaml
-from conf_root import configuration
-from conf_root.a2d import create_dataclass_from_argparse
+from conf_root import configuration, ArgparseConfiguration
 
 
 class TestArgparse(unittest.TestCase):
@@ -23,8 +22,8 @@ class TestArgparse(unittest.TestCase):
         parser = argparse.ArgumentParser(description="Test with default value")
         parser.add_argument("--arg1", default=10, type=int, help="Number 1")
         parser.add_argument("--arg2", default=20, type=int, help="Number 2")
-        ArgsClass = create_dataclass_from_argparse(parser)
-        ArgsClass = configuration(self.location)(ArgsClass)
+        ac = ArgparseConfiguration.from_argparse(parser)
+        ArgsClass = configuration(self.location)(ac.dataclass)
 
         args_namespace = parser.parse_args(['--arg2', '30'])
         args_dataclass = ArgsClass(**vars(args_namespace))
@@ -45,8 +44,8 @@ class TestArgparse(unittest.TestCase):
         parser.add_argument("--arg1", type=int)
         parser.add_argument("--arg2", type=int)
 
-        ArgsClass = create_dataclass_from_argparse(parser)
-        ArgsClass = configuration(self.location)(ArgsClass)
+        ac = ArgparseConfiguration.from_argparse(parser)
+        ArgsClass = configuration(self.location)(ac.dataclass)
         args_namespace = parser.parse_args(['--arg2', '30'])
 
         args_dataclass = ArgsClass(**vars(args_namespace))
@@ -75,8 +74,8 @@ class TestArgparse(unittest.TestCase):
         parser.add_argument("--items", nargs='+', type=str, help="List of items")
         parser.add_argument('--count', '-c', action='count', default=0)
 
-        ArgsClass = create_dataclass_from_argparse(parser)
-        ArgsClass = configuration(self.location)(ArgsClass)
+        ac = ArgparseConfiguration.from_argparse(parser)
+        ArgsClass = configuration(self.location)(ac.dataclass)
         args_dataclass = ArgsClass()
 
         self.assertFalse(hasattr(args_dataclass, 'items'))
@@ -85,4 +84,16 @@ class TestArgparse(unittest.TestCase):
         self.assertTrue(args_dataclass.verbose)
         self.assertEqual(args_dataclass.foo, 42)
 
+    def test_temp(self):
+        parser = argparse.ArgumentParser(description="Test action")
+        parser.add_argument("--verbose", action="store_true", help="Enable verbose mode")
+        parser.add_argument('--foo', action='store_const', const=42)
+        parser.add_argument("--items", nargs='+', type=str, help="List of items")
+        parser.add_argument('--count', '-c', action='count', default=0)
 
+        arg_config = ArgparseConfiguration.from_argparse(parser)
+        ArgsClass = configuration(self.location)(arg_config.dataclass)
+
+
+        args = parser.parse_args(['--items', 'a', 'b'])
+        args_dataclass = ArgsClass(**arg_config.filter_unsupported(args))
