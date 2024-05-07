@@ -26,6 +26,11 @@ class BasicAgent:
                     res[field.name] = BasicAgent.dataclass_default_dict(field.default_factory)
                 else:
                     res[field.name] = field.default_factory
+        # 处理类变量
+        for name, value in cls.__dict__.items():
+            if name not in cls.__annotations__:
+                if not name.startswith('__') and not name.endswith('__'):
+                    res[name] = value
         return res
 
     @staticmethod
