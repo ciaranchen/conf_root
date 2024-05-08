@@ -1,5 +1,5 @@
 import os.path
-from typing import Any
+from typing import Any, Dict
 
 from conf_root.Configuration import Configuration
 from conf_root.agents.BasicAgent import BasicAgent
@@ -21,11 +21,11 @@ class YamlAgent(BasicAgent):
             with open(self.location, "w") as yaml_file:
                 yaml.dump(default_dict, yaml_file)
 
-    def load(self, configuration, obj):
+    def load(self, configuration) -> Dict[str, Any]:
         with open(self.location, encoding='utf-8') as yaml_file:
             data = yaml.safe_load(yaml_file)
         # 将dict展开为对象。
-        configuration.data2obj(data, obj)
+        return configuration.data2obj(data)
 
     def save(self, configuration, obj):
         data_dict = configuration.obj2data(obj)

@@ -25,7 +25,7 @@ class BasicAgent:
         pass
 
     @abstractmethod
-    def load(self, configuration: Configuration, obj: object) -> None:
+    def load(self, configuration: Configuration) -> Dict[str, Any]:
         pass
 
     @abstractmethod

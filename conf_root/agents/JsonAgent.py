@@ -1,3 +1,6 @@
+import os
+
+from conf_root.Configuration import Configuration
 from conf_root.agents.BasicAgent import BasicAgent
 import json
 
@@ -5,25 +8,27 @@ import json
 class JsonAgent(BasicAgent):
     default_extension = 'json'
 
-    def create(self, cls):
-        # 将dataclass默认值转换为dict，便于序列化
-        default_dict = self.dataclass_default_dict(cls)
+    def exist(self, configuration: Configuration) -> bool:
+        return os.path.exists(self.location)
+
+    def create(self, configuration: Configuration):
+        # 将默认值转换为dict，便于序列化
+        default_dict = configuration.defaults
+        print(default_dict)
 
         # 将dict转换为YAML并写入文件
         if len(default_dict.keys()) > 0:
             with open(self.location, "w") as file:
                 json.dump(default_dict, file)
 
-    def load(self, cls, obj):
+    def load(self, configuration):
         with open(self.location, encoding='utf-8') as file:
             data = json.load(file)
-
         # 将dict展开为对象。
-        self.dict_to_dataclass(data, cls, obj)
+        return configuration.data2obj(data)
 
-    def save(self, obj):
-        data_dict = self.dataclass_to_dict(obj)
-
+    def save(self, configuration, obj):
+        data_dict = configuration.obj2data(obj)
         # 将dict转换为YAML并写入文件
         with open(self.location, "w") as file:
             json.dump(data_dict, file)
