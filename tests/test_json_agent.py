@@ -2,14 +2,7 @@ import os
 import unittest
 from dataclasses import dataclass
 
-from conf_root import configuration, JsonAgent
-
-
-@dataclass
-class AppConfig:
-    not_default: str
-    database_host: str = 'localhost'
-    database_port: int = 5432
+from conf_root import ConfRoot, JsonAgent
 
 
 class TestConfig(unittest.TestCase):
@@ -26,8 +19,14 @@ class TestConfig(unittest.TestCase):
             pass  # 如果文件不存在，忽略错误（也可以根据需求抛出异常）
 
     def test_create(self):
-        DecoratedConfig = configuration(self.location, agent=JsonAgent)(AppConfig)
-        app_config = DecoratedConfig('admin')
+        @ConfRoot(self.location, agent=JsonAgent).wrap
+        @dataclass
+        class AppConfig:
+            not_default: str
+            database_host: str = 'localhost'
+            database_port: int = 5432
+
+        app_config = AppConfig('admin')
         self.assertEqual(app_config.database_host, 'localhost')
         self.assertEqual(app_config.database_port, 5432)
         self.assertEqual(app_config.not_default, 'admin')
@@ -43,19 +42,31 @@ class TestConfig(unittest.TestCase):
         self.assertFalse('admin' in content)
 
     def test_load(self):
+        @ConfRoot(self.location, agent=JsonAgent).wrap
+        @dataclass
+        class AppConfig:
+            not_default: str
+            database_host: str = 'localhost'
+            database_port: int = 5432
+
         content = """{"database_host": "127.0.0.1", "database_port": 5432}"""
         # 将处理后的内容写回文件（可以先备份原文件）
         with open(self.location, 'w') as file:
             file.write(content)
 
-        DecoratedConfig = configuration(self.location, agent=JsonAgent)(AppConfig)
-        app_config = DecoratedConfig('admin')
+        app_config = AppConfig('admin')
         self.assertEqual(app_config.database_host, '127.0.0.1')
         self.assertEqual(app_config.database_port, 5432)
 
     def test_save(self):
-        DecoratedConfig = configuration(self.location, agent=JsonAgent)(AppConfig)
-        app_config = DecoratedConfig('admin')
+        @ConfRoot(self.location, agent=JsonAgent).wrap
+        @dataclass
+        class AppConfig:
+            not_default: str
+            database_host: str = 'localhost'
+            database_port: int = 5432
+
+        app_config = AppConfig('admin')
         app_config.database_host = '192.168.1.1'
         app_config.database_port = 3309
         app_config.save()

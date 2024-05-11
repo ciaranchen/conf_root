@@ -26,12 +26,49 @@ class Configuration:
         self.name = name
         self.fields = fields
 
+    @staticmethod
+    def value2text(field, value):
+        if v_configuration := getattr(value, '__CONF_ROOT__', None):
+            return v_configuration.obj2data(value)
+        else:
+            return field.serialize(value)
+
     @property
     def defaults(self) -> Dict[str, Any]:
         res = {}
         for label, field in self.fields.items():
             if field.default is not MISSING:
                 res[label] = self.value2text(field, field.default)
+        return res
+
+    def obj2data(self, obj: object) -> Dict[str, Any]:
+        res = {}
+        for k, v in obj.__dict__.items():
+            # 需避开_agent的预留值
+            if k == '_agent':
+                continue
+            if k in self.fields:
+                field = self.fields[k]
+                res[k] = self.value2text(field, v)
+            else:
+                res[k] = v
+        return res
+
+    def data2obj(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        res = {}
+        for k, v in data.items():
+            if k in self.fields:
+                field = self.fields[k]
+                if v_configuration := getattr(field.type, '__CONF_ROOT__', None):
+                    sub_dict = v_configuration.data2obj(v)
+                    # 这样的弊端是必须严格匹配__init__的顺序和形式；可能会出现问题。
+                    value = field.type(**sub_dict)
+                else:
+                    # 默认将读取的数据转换为原类型。
+                    value = field.deserialize(v)
+                res[k] = value
+            else:
+                res[k] = v
         return res
 
     @classmethod
@@ -58,44 +95,3 @@ class Configuration:
             else:
                 config_fields[name].type = _type
         return cls(config_name, config_fields)
-
-    def obj2data(self, obj: object) -> Dict[str, Any]:
-        """
-        需避开_agent的预留值
-        :param obj:
-        :return:
-        """
-        res = {}
-        for k, v in obj.__dict__.items():
-            if k == '_agent':
-                continue
-            if k in self.fields:
-                field = self.fields[k]
-                res[k] = self.value2text(field, v)
-            else:
-                res[k] = v
-        return res
-
-    @staticmethod
-    def value2text(field, value):
-        if v_configuration := getattr(value, '__CONF_ROOT__', None):
-            return v_configuration.obj2data(value)
-        else:
-            return field.serialize(value)
-
-    def data2obj(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        res = {}
-        for k, v in data.items():
-            if k in self.fields:
-                field = self.fields[k]
-                if v_configuration := getattr(field.type, '__CONF_ROOT__', None):
-                    sub_dict = v_configuration.data2obj(v)
-                    # 这样的弊端是必须严格匹配__init__的顺序和形式；可能会出现问题。
-                    value = field.type(**sub_dict)
-                else:
-                    # 默认将读取的数据转换为原类型。
-                    value = field.deserialize(v)
-                res[k] = value
-            else:
-                res[k] = v
-        return res

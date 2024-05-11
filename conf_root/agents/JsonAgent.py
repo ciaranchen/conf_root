@@ -14,7 +14,6 @@ class JsonAgent(BasicAgent):
     def create(self, configuration: Configuration):
         # 将默认值转换为dict，便于序列化
         default_dict = configuration.defaults
-        print(default_dict)
 
         # 将dict转换为YAML并写入文件
         if len(default_dict.keys()) > 0:
