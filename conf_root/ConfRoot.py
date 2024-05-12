@@ -1,4 +1,4 @@
-from dataclasses import make_dataclass
+from dataclasses import make_dataclass, _MISSING_TYPE
 from typing import Optional
 
 from conf_root.Configuration import Configuration
@@ -69,12 +69,12 @@ class ConfRoot:
                 # 若文件不存在，根据默认值创建
                 instance._agent.create(configuration)
 
-    def handle_argparse(self, parser):
+    def dataclass_from_argparse(self, parser):
         configuration = Configuration.from_argparse(parser)
-        fields = [
+        fields = sorted([
             (name, field._type, field.default)
             for name, field in configuration.fields.items()
-        ]
+        ], key=lambda x: isinstance(x[2], _MISSING_TYPE), reverse=True)
 
         cls = make_dataclass(configuration.name, fields,
                              namespace={'__post_init__': lambda instance: self.post_init(instance, configuration)})

@@ -103,7 +103,7 @@ class Configuration:
                 return action.default
             if action.const:
                 return action.const
-            return None
+            return MISSING
 
         def get_type(action):
             if action.type:
@@ -116,6 +116,15 @@ class Configuration:
         for action in parser._actions:
             name = action.dest
             if name == 'help':
+                continue
+            if not (isinstance(action, argparse._StoreAction)
+                    or isinstance(action, argparse._StoreFalseAction)
+                    or isinstance(action, argparse._StoreTrueAction)
+                    or isinstance(action, argparse._StoreConstAction)):
+                # 暂不考虑不支持的action
+                continue
+            if action.nargs not in [None, 0, 1]:
+                # 暂不考虑多参数的情况
                 continue
             if isinstance(action, argparse._StoreFalseAction):
                 field = ConfigurationField(bool, default=False)
