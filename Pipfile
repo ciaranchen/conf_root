@@ -5,6 +5,7 @@ name = "pip_conf_index_global"
 
 [packages]
 pyyaml = "*"
+"ruamel.yaml" = "*"
 
 [dev-packages]
 
