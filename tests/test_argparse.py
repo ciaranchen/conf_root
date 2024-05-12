@@ -2,7 +2,7 @@ import argparse
 import os
 import unittest
 import yaml
-from conf_root import configuration, ArgparseConfiguration
+from conf_root import ConfRoot
 
 
 class TestArgparse(unittest.TestCase):
@@ -22,8 +22,8 @@ class TestArgparse(unittest.TestCase):
         parser = argparse.ArgumentParser(description="Test with default value")
         parser.add_argument("--arg1", default=10, type=int, help="Number 1")
         parser.add_argument("--arg2", default=20, type=int, help="Number 2")
-        ac = ArgparseConfiguration.from_argparse(parser)
-        ArgsClass = configuration(self.location)(ac.dataclass)
+        # ac = ArgparseConfiguration.from_argparse(parser)
+        ArgsClass = ConfRoot(self.location).handle_argparse(parser)
 
         args_namespace = parser.parse_args(['--arg2', '30'])
         args_dataclass = ArgsClass(**vars(args_namespace))

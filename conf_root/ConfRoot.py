@@ -1,4 +1,4 @@
-from dataclasses import is_dataclass
+from dataclasses import make_dataclass
 from typing import Optional
 
 from conf_root.Configuration import Configuration
@@ -32,17 +32,7 @@ class ConfRoot:
                         pass
                     setattr(_self, name, field.default)
                 origin_init(_self, *args, **kwargs)
-
-                if self.persist:
-                    _self._agent = self.agent_class(self.filename)
-                    if _self._agent.exist(configuration):
-                        # 如果已存在，读取和实例化
-                        data = _self._agent.load(configuration)
-                        for k, v in data.items():
-                            setattr(_self, k, v)
-                    else:
-                        # 若文件不存在，根据默认值创建
-                        _self._agent.create(configuration)
+                self.post_init(_self, configuration)
 
             def save(_self):
                 return _self._agent.save(configuration, _self)
@@ -52,8 +42,9 @@ class ConfRoot:
 
             decorated_init.__name__ = '__init__'
             cls.__init__ = decorated_init
-            cls.save = save
-            cls.load = load
+            if self.persist:
+                cls.save = save
+                cls.load = load
             return cls
 
         if len(args) == 1 and isinstance(args[0], type):
@@ -65,3 +56,28 @@ class ConfRoot:
         else:
             # 只有kwargs的情况下，直接给回结果
             return decorator
+
+    def post_init(self, instance, configuration):
+        if self.persist:
+            instance._agent = self.agent_class(self.filename)
+            if instance._agent.exist(configuration):
+                # 如果已存在，读取和实例化
+                data = instance._agent.load(configuration)
+                for k, v in data.items():
+                    setattr(instance, k, v)
+            else:
+                # 若文件不存在，根据默认值创建
+                instance._agent.create(configuration)
+
+    def handle_argparse(self, parser):
+        configuration = Configuration.from_argparse(parser)
+        fields = [
+            (name, field._type, field.default)
+            for name, field in configuration.fields.items()
+        ]
+
+        cls = make_dataclass(configuration.name, fields,
+                             namespace={'__post_init__': lambda instance: self.post_init(instance, configuration)})
+        setattr(cls, '__CONF_ROOT__', configuration)
+        # cls.__post_init__ = lambda instance: self.post_init(instance, configuration)
+        return cls
