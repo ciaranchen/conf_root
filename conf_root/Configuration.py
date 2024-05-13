@@ -1,4 +1,3 @@
-import argparse
 import logging
 from dataclasses import MISSING, fields as dataclasses_fields, Field as DataclassField, is_dataclass
 from typing import List, Any, Dict, Type, Optional
@@ -66,48 +65,3 @@ class Configuration:
         for field in dataclasses_fields(_class):
             fields[field.name] = field
         return cls(config_name, fields)
-
-    @classmethod
-    def from_argparse(cls, conf_name: str, parser: argparse.ArgumentParser):
-        def get_default(action):
-            if isinstance(action, argparse._StoreConstAction):
-                return action.const
-            if action.default:
-                return action.default
-            if action.const:
-                return action.const
-            return MISSING
-
-        def get_type(action):
-            if action.type:
-                return action.type
-            default = get_default(action)
-            if default:
-                return type(default)
-
-        fields = {}
-        for action in parser._actions:
-            name = action.dest
-            if name == 'help':
-                continue
-            if not (isinstance(action, argparse._StoreAction)
-                    or isinstance(action, argparse._StoreFalseAction)
-                    or isinstance(action, argparse._StoreTrueAction)
-                    or isinstance(action, argparse._StoreConstAction)):
-                # 暂不考虑不支持的action
-                continue
-            if action.nargs not in [None, 0, 1]:
-                # 暂不考虑多参数的情况
-                continue
-            # TODO: handle other Action.
-
-            if isinstance(action, argparse._StoreFalseAction):
-                field = ConfigurationField(bool, default=False)
-            elif isinstance(action, argparse._StoreTrueAction):
-                field = ConfigurationField(bool, default=True)
-            else:
-                default = get_default(action)
-                _type = get_type(action)
-                field = ConfigurationField(_type, default=default)
-            fields[name] = field
-        return cls(conf_name, fields)

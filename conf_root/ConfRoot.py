@@ -1,4 +1,5 @@
-from dataclasses import make_dataclass, _MISSING_TYPE, is_dataclass, fields as dataclasses_fields
+import argparse
+from dataclasses import make_dataclass, is_dataclass, MISSING
 from pathlib import Path
 from typing import Optional, Type
 
@@ -68,15 +69,50 @@ class ConfRoot:
                 # 若文件不存在，根据默认值创建
                 instance._agent.create(configuration)
 
-    def dataclass_from_argparse(self, parser, name='argparse'):
-        configuration = Configuration.from_argparse(name, parser)
-        fields = sorted([
-            (name, field._type, field.default)
-            for name, field in configuration.fields.items()
-        ], key=lambda x: isinstance(x[2], _MISSING_TYPE), reverse=True)
+    def from_argparse(self, parser, cls_name='argparse'):
+        def get_default(action):
+            if isinstance(action, argparse._StoreConstAction):
+                return action.const
+            if action.default:
+                return action.default
+            if action.const:
+                return action.const
+            return MISSING
 
-        cls = make_dataclass(configuration.name, fields,
-                             namespace={'__post_init__': lambda instance: self.post_init(instance, configuration)})
-        setattr(cls, '__CONF_ROOT__', configuration)
-        return cls
+        def get_type(action):
+            if action.type:
+                return action.type
+            default = get_default(action)
+            if default:
+                return type(default)
 
+        fields = []
+        for action in parser._actions:
+            name = action.dest
+            if name == 'help':
+                continue
+            if not (isinstance(action, argparse._StoreAction)
+                    or isinstance(action, argparse._StoreFalseAction)
+                    or isinstance(action, argparse._StoreTrueAction)
+                    or isinstance(action, argparse._StoreConstAction)):
+                # 暂不考虑不支持的action
+                continue
+            if action.nargs not in [None, 0, 1]:
+                # 暂不考虑多参数的情况
+                continue
+            # TODO: handle other Action.
+
+            if isinstance(action, argparse._StoreFalseAction):
+                field = (name, bool, False)
+            elif isinstance(action, argparse._StoreTrueAction):
+                field = (name, bool, True)
+            else:
+                default = get_default(action)
+                _type = get_type(action)
+                field = (name, _type, default)
+            fields.append(field)
+
+        fields = sorted(fields, key=lambda x: x[2] == MISSING, reverse=True)
+
+        cls = make_dataclass(cls_name.replace(f'.{self.agent_obj.default_extension}', ''), fields)
+        return self.wrap(cls_name)(cls)
