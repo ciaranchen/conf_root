@@ -42,8 +42,7 @@ class RuamelYamlAgent(BasicAgent):
 
     def load(self, configuration: Configuration) -> None:
         super().load(configuration)
-        data = self._load()
-        configuration.data2obj(data[configuration.name])
+        return self._load()
 
     def save(self, configuration: Configuration, obj: object) -> None:
         super().save(configuration, obj)

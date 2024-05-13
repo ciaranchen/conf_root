@@ -1,9 +1,8 @@
 import os
 import unittest
-from dataclasses import dataclass
+from dataclasses import dataclass, field as dataclass_field
 
-from conf_root import ConfRoot, is_configuration_class
-from conf_root.Configuration import ConfigurationField
+from conf_root import ConfRoot
 
 
 @ConfRoot(persist=False).wrap()
@@ -16,8 +15,7 @@ class NestedConfig:
 @dataclass
 class AppConfig:
     nc_defined: NestedConfig
-    nc_default = NestedConfig()
-    nc_default2 = ConfigurationField(NestedConfig, default=NestedConfig('default2_nest1', 'default2_nest2'))
+    nc_default: NestedConfig = dataclass_field(default_factory=NestedConfig)
 
 
 class TestConfig(unittest.TestCase):
@@ -34,13 +32,10 @@ class TestConfig(unittest.TestCase):
             pass  # 如果文件不存在，忽略错误（也可以根据需求抛出异常）
 
     def test_create(self):
-        DecoratedConfig = ConfRoot().wrap(AppConfig, name=self.location)
+        DecoratedConfig = ConfRoot().wrap(self.location)(AppConfig)
         app_config = DecoratedConfig(NestedConfig(config1='defined1', config2='defined2'))
         self.assertEqual(app_config.nc_default.config1, 'nest_config1')
         self.assertEqual(app_config.nc_default.config2, 'nest_config2')
-
-        self.assertEqual(app_config.nc_default2.config1, 'default2_nest1')
-        self.assertEqual(app_config.nc_default2.config2, 'default2_nest2')
 
         self.assertEqual(app_config.nc_defined.config1, 'defined1')
         self.assertEqual(app_config.nc_defined.config2, 'defined2')
@@ -52,8 +47,6 @@ class TestConfig(unittest.TestCase):
             content = file.read()
         self.assertTrue('nest_config1' in content)
         self.assertTrue('nest_config2' in content)
-        self.assertTrue('default2_nest1' in content)
-        self.assertTrue('default2_nest2' in content)
         # defined 因为非默认配置，不在配置文件中。
         self.assertFalse('defined1' in content)
         self.assertFalse('defined2' in content)
@@ -69,7 +62,7 @@ nc_defined:
         with open(self.location, 'w') as file:
             file.write(content)
 
-        DecoratedConfig = ConfRoot().wrap(AppConfig, name=self.location)
+        DecoratedConfig = ConfRoot().wrap(self.location)(AppConfig)
         app_config = DecoratedConfig(NestedConfig(config1='defined1', config2='defined2'))
         self.assertEqual(app_config.nc_default.config1, 'default_load1')
         self.assertEqual(app_config.nc_default.config2, 'nest_config2')
@@ -78,11 +71,11 @@ nc_defined:
         self.assertEqual(app_config.nc_defined.config2, 'load2')
 
     def test_save(self):
-        DecoratedConfig = ConfRoot().wrap(AppConfig, name=self.location)
+        DecoratedConfig = ConfRoot().wrap(self.location)(AppConfig)
         app_config = DecoratedConfig(NestedConfig(config1='defined1', config2='defined2'))
         app_config.nc_default.config1 = 'save_default'
         app_config.nc_defined.config1 = 'save_defined'
-        app_config.save(app_config)
+        app_config.save()
 
         # 外部修改配置文件后读取，结果应为配置文件内的设置。
         # 打开文件，读取内容

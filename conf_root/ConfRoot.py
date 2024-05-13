@@ -1,13 +1,14 @@
-from dataclasses import make_dataclass, _MISSING_TYPE
+from dataclasses import make_dataclass, _MISSING_TYPE, is_dataclass, fields as dataclasses_fields
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Type
 
 from conf_root.Configuration import Configuration
+from conf_root.agents.BasicAgent import BasicAgent
 from conf_root.agents.YamlAgent import YamlAgent
 
 
 class ConfRoot:
-    def __init__(self, path: str = None, agent=YamlAgent, persist: bool = True):
+    def __init__(self, path: str = None, agent: Type[BasicAgent] = YamlAgent, persist: bool = True):
         self.path = Path(path) if path is not None else Path()
         self.agent_class = agent
         self.persist = persist
@@ -15,6 +16,8 @@ class ConfRoot:
 
     def wrap(self, *args, **kwargs):
         def decorator(cls, name: Optional[str] = None):
+            if not is_dataclass(cls):
+                raise TypeError(f"Target class must be a dataclass, got {cls}")
             if name is None:
                 name = cls.__qualname__.replace('<locals>.', '')
 
@@ -25,10 +28,6 @@ class ConfRoot:
             origin_init = cls.__init__
 
             def decorated_init(_self, *args, **kwargs):
-                # # do init
-                # for name, field in configuration.fields.items():
-                #     if field.init:
-                #         setattr(_self, name, field.default)
                 origin_init(_self, *args, **kwargs)
                 self.post_init(_self, configuration)
 
@@ -36,7 +35,8 @@ class ConfRoot:
                 return _self._agent.save(configuration, _self)
 
             def load(_self):
-                return _self._agent.load(configuration, _self)
+                data = _self._agent.load(configuration)
+                configuration.data2obj(_self, data)
 
             decorated_init.__name__ = '__init__'
             cls.__init__ = decorated_init
@@ -63,8 +63,7 @@ class ConfRoot:
             if instance._agent.exist(configuration):
                 # 如果已存在，读取和实例化
                 data = instance._agent.load(configuration)
-                for k, v in data.items():
-                    setattr(instance, k, v)
+                configuration.data2obj(instance, data)
             else:
                 # 若文件不存在，根据默认值创建
                 instance._agent.create(configuration)
@@ -80,3 +79,4 @@ class ConfRoot:
                              namespace={'__post_init__': lambda instance: self.post_init(instance, configuration)})
         setattr(cls, '__CONF_ROOT__', configuration)
         return cls
+

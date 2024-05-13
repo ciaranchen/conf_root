@@ -28,7 +28,7 @@ class JsonAgent(BasicAgent):
         with open(location, encoding='utf-8') as file:
             data = json.load(file)
         # 将dict展开为对象。
-        return configuration.data2obj(data)
+        return data
 
     def save(self, configuration, obj):
         super().save(configuration, obj)

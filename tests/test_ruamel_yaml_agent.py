@@ -30,7 +30,7 @@ class TestRuamelYamlAgent(unittest.TestCase):
         class AppConfig:
             not_default: str
             database_host: str = 'localhost'
-            database_port = 5432
+            database_port: int = 5432
 
         app_config = AppConfig('admin')
         self.assertEqual(app_config.database_host, 'localhost')

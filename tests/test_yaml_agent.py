@@ -24,7 +24,7 @@ class TestYamlAgent(unittest.TestCase):
         class AppConfig:
             not_default: str
             database_host: str = 'localhost'
-            database_port = 5432
+            database_port: int = 5432
 
         app_config = AppConfig('admin')
         self.assertEqual(app_config.database_host, 'localhost')
@@ -54,7 +54,7 @@ database_port: 5432
         class AppConfig:
             not_default: str
             database_host: str = 'localhost'
-            database_port = 5432
+            database_port: int = 5432
 
         app_config = AppConfig('admin')
         self.assertEqual(app_config.database_host, '127.0.0.1')
@@ -66,7 +66,7 @@ database_port: 5432
         class AppConfig:
             not_default: str
             database_host: str = 'localhost'
-            database_port = 5432
+            database_port: int = 5432
 
         app_config = AppConfig('admin')
         app_config.database_host = '192.168.1.1'
