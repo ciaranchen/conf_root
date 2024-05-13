@@ -1,6 +1,11 @@
 import argparse
-from dataclasses import MISSING, fields as dataclass_fields, is_dataclass, dataclass
+import logging
+from dataclasses import MISSING, dataclass
 from typing import List, Any, Dict
+
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                    datefmt='%m-%d %H:%M:%S')
+logger = logging.getLogger(__name__)
 
 
 def is_configuration_class(cls_or_instance):
@@ -11,7 +16,7 @@ def is_configuration_class(cls_or_instance):
 class ConfigurationField:
     _type: type
     default: Any = MISSING
-    init: bool = True
+    # init: bool = True
     # TODO: 添加validators
     # validators=None
 
@@ -89,6 +94,8 @@ class Configuration:
                 fields[name] = ConfigurationField(_type, default=MISSING)
             else:
                 fields[name]._type = _type
+        logger.debug(config_name)
+        logger.debug(fields)
         return cls(config_name, fields)
 
     @classmethod

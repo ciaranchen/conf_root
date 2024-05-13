@@ -15,7 +15,8 @@ class ConfRoot:
 
     def wrap(self, *args, **kwargs):
         def decorator(cls, name: Optional[str] = None):
-            name = name if name else cls.__qualname__.replace('<locals>.', '')
+            if name is None:
+                name = cls.__qualname__.replace('<locals>.', '')
 
             configuration = Configuration.from_wrapper(cls, name)
             setattr(cls, '__CONF_ROOT__', configuration)
@@ -24,11 +25,10 @@ class ConfRoot:
             origin_init = cls.__init__
 
             def decorated_init(_self, *args, **kwargs):
-                # do init
-                for name, field in configuration.fields.items():
-                    if field.init:
-                        pass
-                    setattr(_self, name, field.default)
+                # # do init
+                # for name, field in configuration.fields.items():
+                #     if field.init:
+                #         setattr(_self, name, field.default)
                 origin_init(_self, *args, **kwargs)
                 self.post_init(_self, configuration)
 
@@ -52,10 +52,10 @@ class ConfRoot:
         if len(args) >= 1:
             # 有args的情况下，取第一个args为 config 名称。
             # @wrap('config'）
-            return lambda cls: decorator(cls, args[0], **kwargs)
+            return lambda cls: decorator(cls, args[0])
         # 无args, 只有kwargs的情况下，直接给出decorator
-        # @wrap()
-        return decorator
+        # @wrap() or @wrap(name='config')
+        return lambda cls: decorator(cls, **kwargs)
 
     def post_init(self, instance, configuration):
         if self.persist:
@@ -79,5 +79,4 @@ class ConfRoot:
         cls = make_dataclass(configuration.name, fields,
                              namespace={'__post_init__': lambda instance: self.post_init(instance, configuration)})
         setattr(cls, '__CONF_ROOT__', configuration)
-        # cls.__post_init__ = lambda instance: self.post_init(instance, configuration)
         return cls

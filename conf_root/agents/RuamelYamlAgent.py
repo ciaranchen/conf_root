@@ -11,7 +11,7 @@ class RuamelYamlAgent(BasicAgent):
     """
     Similar with yaml agent, but save in single file.
     """
-    default_extension: str = 'yaml'
+    default_extension: str = 'yml'
 
     def __init__(self, location):
         parent_directory = Path(location).parent
@@ -30,6 +30,7 @@ class RuamelYamlAgent(BasicAgent):
         return configuration.name in self.data
 
     def create(self, configuration: Configuration) -> None:
+        super().create(configuration)
         self.data[configuration.name] = configuration.defaults
 
         with open(self.location, 'w') as f:
@@ -40,10 +41,12 @@ class RuamelYamlAgent(BasicAgent):
             return self.yaml_parser.load(f)
 
     def load(self, configuration: Configuration) -> None:
+        super().load(configuration)
         data = self._load()
         configuration.data2obj(data[configuration.name])
 
     def save(self, configuration: Configuration, obj: object) -> None:
+        super().save(configuration, obj)
         total_data = self._load()
 
         data = configuration.obj2data(obj)

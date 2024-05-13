@@ -2,8 +2,13 @@ import re
 from abc import abstractmethod
 from pathlib import Path
 from typing import Any, Dict
+import logging
 
 from conf_root.Configuration import Configuration
+
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                    datefmt='%m-%d %H:%M:%S')
+logger = logging.getLogger(__name__)
 
 
 class BasicAgent:
@@ -29,12 +34,13 @@ class BasicAgent:
 
     @abstractmethod
     def create(self, configuration: Configuration) -> None:
-        pass
+        logger.debug(f'create with default in: {self.get_configuration_location(configuration)}')
 
     @abstractmethod
     def load(self, configuration: Configuration) -> Dict[str, Any]:
+        logger.debug(f'load from: {self.get_configuration_location(configuration)}')
         pass
 
     @abstractmethod
     def save(self, configuration: Configuration, obj: object) -> None:
-        pass
+        logger.debug(f'save to: {self.get_configuration_location(configuration)}')
