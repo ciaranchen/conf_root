@@ -18,9 +18,9 @@ class RuamelYamlAgent(BasicAgent):
         super().__init__(parent_directory)
         self.location = Path(location)
 
-        self.yaml_parser = YAML()
-        self.yaml_parser.preserve_quotes = True
-        self.yaml_parser.indent(mapping=2, sequence=4, offset=2)
+        self.yaml = YAML()
+        self.yaml.preserve_quotes = True
+        self.yaml.indent(mapping=2, sequence=4, offset=2)
         self.data = {}
 
     def exist(self, configuration: Configuration) -> bool:
@@ -34,11 +34,11 @@ class RuamelYamlAgent(BasicAgent):
         self.data[configuration.name] = configuration.defaults
 
         with open(self.location, 'w') as f:
-            self.yaml_parser.dump(self.data, f)
+            self.yaml.dump(self.data, f)
 
     def _load(self):
         with open(self.location, 'r') as f:
-            return self.yaml_parser.load(f)
+            return self.yaml.load(f)
 
     def load(self, configuration: Configuration) -> None:
         super().load(configuration)
@@ -52,4 +52,4 @@ class RuamelYamlAgent(BasicAgent):
         total_data[configuration.name] = data
 
         with open(self.location, 'w') as f:
-            self.yaml_parser.dump(total_data, f)
+            self.yaml.dump(total_data, f)
