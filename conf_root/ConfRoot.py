@@ -9,10 +9,10 @@ from conf_root.agents.YamlAgent import YamlAgent
 
 
 class ConfRoot:
-    def __init__(self, path: str = None, agent: Type[BasicAgent] = YamlAgent, persist: bool = True):
+    def __init__(self, path: str = None, agent: Type[BasicAgent] = YamlAgent):
         self.path = Path(path) if path is not None else Path()
         self.agent_class = agent
-        self.persist = persist
+        self.persist = (agent is not None)
         self.agent_obj = self.agent_class(self.path)
 
     def wrap(self, *args, **kwargs):

@@ -12,13 +12,13 @@
 ## 封装dataclass
 
 ```python
-from conf_root import configuration, YamlAgent
+from conf_root import ConfRoot
 from dataclasses import dataclass
 
 
-# @configuration
-# 这个装饰器也支持上面这种简写方式
-@configuration('config.yaml', agent=YamlAgent)
+# @ConfRoot().wrap
+# 这个装饰器也支持上面这种调用方式
+@ConfRoot('config.yaml').wrap()
 @dataclass
 class AppConfig:
     database_host: str = 'localhost'
@@ -40,7 +40,7 @@ app_config.load()
 
 ```python
 import argparse
-from conf_root import configuration, ArgparseConfiguration
+from conf_root import ConfRoot
 
 # 科研项目经常出现一大堆parser.argument
 parser = argparse.ArgumentParser()
@@ -49,18 +49,12 @@ parser.add_argument("--dataSet", type=str, default="wiki", help="cora, citeseer,
 parser.add_argument("--dropout", type=float, default=0.5)
 args = parser.parse_args()
 
-# 使用以下代码解析Argparse并转换为支持conf_root的dataclass。
-arg_config = ArgparseConfiguration.from_argparse(parser)
-ArgsClass = configuration(arg_config.dataclass)
+# 解析Argparse并转换为支持conf_root的dataclass。
+ArgsClass = ConfRoot().dataclass_from_argparse(parser)
 
 # 之后可以使用以下代码，创建并使用配置文件。
 # 大部分科研项目的情况下，使用下面就可以了
 args_dataclass = ArgsClass(**vars(args))
-# 如果parser中包含不支持的参数，使用下面的方法过滤
-args_dataclass2 = ArgsClass(**arg_config.filter_unsupported(args))
-
-# 或者使用配置文件值优先的参数解析结果，可替换原本的args
-args = arg_config.get_namespace(args_dataclass2, args)
 ```
 
 > note: 在默认产生的dataclass对象中，优先使用 命令行参数 > 配置文件值 > 默认值。可通过 load() 方式使用配置文件值覆盖命令行参数。
@@ -74,17 +68,18 @@ argparse 到 dataclass 目前仅支持常见的参数。这不意味着有不支
 ## More Example
 
 ```python
-from conf_root import configuration, JsonAgent
+from conf_root import ConfRoot, JsonAgent
 from dataclasses import dataclass, field
 
 
+@ConfRoot(agent=None).wrap
 @dataclass
 class DataBaseUserConfig:
     database_user: str = 'admin'
     database_password: str = 'default_password'
 
 
-@configuration(agent=JsonAgent)
+@ConfRoot(agent=JsonAgent).wrap
 # 可通过agent_class指定配置文件格式
 # 此时默认配置文件名为 `config.json`
 @dataclass
