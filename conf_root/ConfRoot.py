@@ -9,7 +9,7 @@ from conf_root.agents.YamlAgent import YamlAgent
 
 
 class ConfRoot:
-    def __init__(self, path: str = None, agent: Type[BasicAgent] = YamlAgent):
+    def __init__(self, path: str = None, agent: Optional[Type[BasicAgent]] = YamlAgent):
         self.path = Path(path) if path is not None else Path()
         self.agent_class = agent
         self.persist = (agent is not None)
@@ -69,7 +69,7 @@ class ConfRoot:
                 # 若文件不存在，根据默认值创建
                 instance._agent.create(configuration)
 
-    def from_argparse(self, parser, cls_name='argparse'):
+    def from_argparse(self, parser: argparse.ArgumentParser, cls_name: str = 'argparse'):
         def get_default(action):
             if isinstance(action, argparse._StoreConstAction):
                 return action.const
