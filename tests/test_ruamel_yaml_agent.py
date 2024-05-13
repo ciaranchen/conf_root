@@ -8,8 +8,8 @@ from conf_root import ConfRoot
 from conf_root.agents.RuamelYamlAgent import RuamelYamlAgent
 
 
-class TestConfig(unittest.TestCase):
-    location = 'settings.yaml'
+class TestRuamelYamlAgent(unittest.TestCase):
+    location = 'settings.yml'
 
     def __init__(self, methodName="runTest"):
         super().__init__(methodName)

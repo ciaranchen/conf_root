@@ -5,10 +5,10 @@ from dataclasses import dataclass
 from conf_root import ConfRoot
 
 
-class TestConfig(unittest.TestCase):
+class TestYamlAgent(unittest.TestCase):
     def __init__(self, methodName="runTest"):
         super().__init__(methodName)
-        self.location = 'settings.yaml'
+        self.location = 'settings.yml'
 
     def tearDown(self):
         # 这个方法将在每个测试方法结束后运行
@@ -19,7 +19,7 @@ class TestConfig(unittest.TestCase):
             pass  # 如果文件不存在，忽略错误（也可以根据需求抛出异常）
 
     def test_create(self):
-        @ConfRoot(self.location).wrap
+        @ConfRoot().wrap(self.location)
         @dataclass
         class AppConfig:
             not_default: str
@@ -49,7 +49,7 @@ database_port: 5432
         with open(self.location, 'w') as file:
             file.write(content)
 
-        @ConfRoot(self.location).wrap
+        @ConfRoot().wrap(self.location)
         @dataclass
         class AppConfig:
             not_default: str
@@ -61,7 +61,7 @@ database_port: 5432
         self.assertEqual(app_config.database_port, 5432)
 
     def test_save(self):
-        @ConfRoot(self.location).wrap
+        @ConfRoot().wrap(self.location)
         @dataclass
         class AppConfig:
             not_default: str

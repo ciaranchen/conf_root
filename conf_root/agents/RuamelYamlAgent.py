@@ -1,4 +1,6 @@
 import os
+from pathlib import Path
+
 from ruamel.yaml import YAML
 
 from conf_root.Configuration import Configuration
@@ -12,7 +14,10 @@ class RuamelYamlAgent(BasicAgent):
     default_extension: str = 'yaml'
 
     def __init__(self, location):
-        super().__init__(location)
+        parent_directory = Path(location).parent
+        super().__init__(parent_directory)
+        self.location = Path(location)
+
         self.yaml_parser = YAML()
         self.yaml_parser.preserve_quotes = True
         self.yaml_parser.indent(mapping=2, sequence=4, offset=2)

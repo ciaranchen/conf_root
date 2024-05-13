@@ -23,7 +23,7 @@ class AppConfig:
 class TestConfig(unittest.TestCase):
     def __init__(self, methodName="runTest"):
         super().__init__(methodName)
-        self.location = 'nested_config.yaml'
+        self.location = 'nested_config.yml'
 
     def tearDown(self):
         # 这个方法将在每个测试方法结束后运行
@@ -34,7 +34,7 @@ class TestConfig(unittest.TestCase):
             pass  # 如果文件不存在，忽略错误（也可以根据需求抛出异常）
 
     def test_create(self):
-        DecoratedConfig = ConfRoot(self.location).wrap(AppConfig)
+        DecoratedConfig = ConfRoot().wrap(AppConfig, name=self.location)
         app_config = DecoratedConfig(NestedConfig(config1='defined1', config2='defined2'))
         self.assertEqual(app_config.nc_default.config1, 'nest_config1')
         self.assertEqual(app_config.nc_default.config2, 'nest_config2')
@@ -69,7 +69,7 @@ nc_defined:
         with open(self.location, 'w') as file:
             file.write(content)
 
-        DecoratedConfig = ConfRoot(self.location).wrap(AppConfig)
+        DecoratedConfig = ConfRoot().wrap(AppConfig, name=self.location)
         app_config = DecoratedConfig(NestedConfig(config1='defined1', config2='defined2'))
         self.assertEqual(app_config.nc_default.config1, 'default_load1')
         self.assertEqual(app_config.nc_default.config2, 'nest_config2')
@@ -78,7 +78,7 @@ nc_defined:
         self.assertEqual(app_config.nc_defined.config2, 'load2')
 
     def test_save(self):
-        DecoratedConfig = ConfRoot(self.location).wrap(AppConfig)
+        DecoratedConfig = ConfRoot().wrap(AppConfig, name=self.location)
         app_config = DecoratedConfig(NestedConfig(config1='defined1', config2='defined2'))
         app_config.nc_default.config1 = 'save_default'
         app_config.nc_defined.config1 = 'save_defined'

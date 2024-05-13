@@ -92,10 +92,7 @@ class Configuration:
         return cls(config_name, fields)
 
     @classmethod
-    def from_argparse(cls, parser: argparse.ArgumentParser):
-        # TODO: handle other Action.
-        conf_name = 'argparse'
-
+    def from_argparse(cls, conf_name: str, parser: argparse.ArgumentParser):
         def get_default(action):
             if isinstance(action, argparse._StoreConstAction):
                 return action.const
@@ -126,6 +123,8 @@ class Configuration:
             if action.nargs not in [None, 0, 1]:
                 # 暂不考虑多参数的情况
                 continue
+            # TODO: handle other Action.
+
             if isinstance(action, argparse._StoreFalseAction):
                 field = ConfigurationField(bool, default=False)
             elif isinstance(action, argparse._StoreTrueAction):

@@ -8,7 +8,7 @@ from conf_root import ConfRoot
 class TestArgparse(unittest.TestCase):
     def __init__(self, methodName="runTest"):
         super().__init__(methodName)
-        self.location = 'argsparse.yaml'
+        self.location = 'argparse.yml'
 
     def tearDown(self):
         # 这个方法将在每个测试方法结束后运行
@@ -22,7 +22,7 @@ class TestArgparse(unittest.TestCase):
         parser = argparse.ArgumentParser(description="Test with default value")
         parser.add_argument("--arg1", default=10, type=int, help="Number 1")
         parser.add_argument("--arg2", default=20, type=int, help="Number 2")
-        ArgsClass = ConfRoot(self.location).dataclass_from_argparse(parser)
+        ArgsClass = ConfRoot().dataclass_from_argparse(parser)
 
         args_namespace = parser.parse_args(['--arg2', '30'])
         args_dataclass = ArgsClass(**vars(args_namespace))
@@ -42,7 +42,7 @@ class TestArgparse(unittest.TestCase):
         parser.add_argument("--default_value", default=40, type=int)
         parser.add_argument("--arg1", type=int)
         parser.add_argument("--arg2", type=int)
-        ArgsClass = ConfRoot(self.location).dataclass_from_argparse(parser)
+        ArgsClass = ConfRoot().dataclass_from_argparse(parser)
 
         args_namespace = parser.parse_args(['--arg2', '30'])
         args_dataclass = ArgsClass(**vars(args_namespace))
@@ -71,7 +71,7 @@ class TestArgparse(unittest.TestCase):
         parser.add_argument('--foo', action='store_const', const=42)
         parser.add_argument("--items", nargs='+', type=str, help="List of items")
         parser.add_argument('--count', '-c', action='count', default=0)
-        ArgsClass = ConfRoot(self.location).dataclass_from_argparse(parser)
+        ArgsClass = ConfRoot().dataclass_from_argparse(parser)
         args_dataclass = ArgsClass()
 
         self.assertFalse(hasattr(args_dataclass, 'items'))

@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from conf_root import ConfRoot, JsonAgent
 
 
-class TestConfig(unittest.TestCase):
+class TestJsonConfig(unittest.TestCase):
     def __init__(self, methodName="runTest"):
         super().__init__(methodName)
         self.location = 'settings.json'
@@ -19,7 +19,7 @@ class TestConfig(unittest.TestCase):
             pass  # 如果文件不存在，忽略错误（也可以根据需求抛出异常）
 
     def test_create(self):
-        @ConfRoot(self.location, agent=JsonAgent).wrap
+        @ConfRoot(agent=JsonAgent).wrap(self.location)
         @dataclass
         class AppConfig:
             not_default: str
@@ -42,7 +42,7 @@ class TestConfig(unittest.TestCase):
         self.assertFalse('admin' in content)
 
     def test_load(self):
-        @ConfRoot(self.location, agent=JsonAgent).wrap
+        @ConfRoot(agent=JsonAgent).wrap(self.location)
         @dataclass
         class AppConfig:
             not_default: str
@@ -59,7 +59,7 @@ class TestConfig(unittest.TestCase):
         self.assertEqual(app_config.database_port, 5432)
 
     def test_save(self):
-        @ConfRoot(self.location, agent=JsonAgent).wrap
+        @ConfRoot(agent=JsonAgent).wrap(self.location)
         @dataclass
         class AppConfig:
             not_default: str

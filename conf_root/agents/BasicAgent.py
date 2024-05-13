@@ -1,3 +1,4 @@
+import re
 from abc import abstractmethod
 from pathlib import Path
 from typing import Any, Dict
@@ -12,9 +13,15 @@ class BasicAgent:
     default_extension: str = 'undefined'
 
     def __init__(self, location):
-        self.location = Path(location)
-        parent_directory = self.location.parent
-        parent_directory.mkdir(parents=True, exist_ok=True)
+        self.path = Path(location)
+        self.path.mkdir(parents=True, exist_ok=True)
+
+    def get_configuration_location(self, configuration: Configuration) -> Path:
+        invalid_chars_pattern = r'[\\/:*?"<>|]'
+        filename = re.sub(invalid_chars_pattern, '_', configuration.name)
+        if not filename.endswith(f'.{self.default_extension}'):
+            filename += f'.{self.default_extension}'
+        return self.path.joinpath(filename)
 
     @abstractmethod
     def exist(self, configuration: Configuration) -> bool:
