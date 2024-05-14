@@ -9,11 +9,12 @@ from conf_root.agents.YamlAgent import YamlAgent
 
 
 class ConfRoot:
-    def __init__(self, path: str = None, agent: Optional[Type[BasicAgent]] = YamlAgent):
+    def __init__(self, path: str = None, agent_class: Optional[Type[BasicAgent]] = YamlAgent):
         self.path = Path(path) if path is not None else Path()
-        self.agent_class = agent
-        self.persist = (agent is not None)
-        self.agent_obj = self.agent_class(self.path)
+        self.agent_class = agent_class
+        self.persist = (agent_class is not None)
+        if self.persist:
+            self.agent = self.agent_class(self.path)
 
     def wrap(self, *args, **kwargs):
         def decorator(cls, name: Optional[str] = None):
@@ -33,10 +34,10 @@ class ConfRoot:
                 self.post_init(_self, configuration)
 
             def save(_self):
-                return _self._agent.save(configuration, _self)
+                return self.agent.save(configuration, _self)
 
             def load(_self):
-                data = _self._agent.load(configuration)
+                data = self.agent.load(configuration)
                 configuration.data2obj(_self, data)
 
             decorated_init.__name__ = '__init__'
@@ -60,14 +61,13 @@ class ConfRoot:
 
     def post_init(self, instance, configuration):
         if self.persist:
-            instance._agent = self.agent_obj
-            if instance._agent.exist(configuration):
+            if self.agent.exist(configuration):
                 # 如果已存在，读取和实例化
-                data = instance._agent.load(configuration)
+                data = self.agent.load(configuration)
                 configuration.data2obj(instance, data)
             else:
                 # 若文件不存在，根据默认值创建
-                instance._agent.create(configuration)
+                self.agent.create(configuration)
 
     def from_argparse(self, parser: argparse.ArgumentParser, cls_name: str = 'argparse'):
         def get_default(action):
@@ -114,5 +114,5 @@ class ConfRoot:
 
         fields = sorted(fields, key=lambda x: x[2] == MISSING, reverse=True)
 
-        cls = make_dataclass(cls_name.replace(f'.{self.agent_obj.default_extension}', ''), fields)
+        cls = make_dataclass(cls_name.replace(f'.{self.agent.default_extension}', ''), fields)
         return self.wrap(cls_name)(cls)

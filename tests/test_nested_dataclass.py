@@ -5,7 +5,7 @@ from dataclasses import dataclass, field as dataclass_field
 from conf_root import ConfRoot
 
 
-@ConfRoot(agent=None).wrap()
+@ConfRoot(agent_class=None).wrap()
 @dataclass
 class NestedConfig:
     config1: str = 'nest_config1'

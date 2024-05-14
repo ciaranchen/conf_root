@@ -39,10 +39,10 @@ app_config.load()
 
 ### 参数解释
 
-#### `ConfRoot(path = None, agent: Optional[Type[BasicAgent]] = YamlAgent)`
+#### `ConfRoot(path = None, agent_class: Optional[Type[BasicAgent]] = YamlAgent)`
 
 - path 为基本路径。当它为None时，将会设置为当前文件路径。
-- agent 为配置存储的形式。当前支持JsonAgent/YamlAgent/RuamelAgent。默认为YamlAgent。
+- agent_class 为配置存储的形式。当前支持JsonAgent/YamlAgent/RuamelAgent。默认为YamlAgent。
     - 对于存储到多个文件的agent（JsonAgent、YamlAgent），path是配置存储的文件夹路径。
     - 对于存储到单个文件的agent（RuamelAgent），path是配置存储的文件路径。
     - 如果指定为None，可以不产生配置文件存储；同时也不会为类添加save与load方法。
@@ -105,22 +105,22 @@ from conf_root import ConfRoot, JsonAgent
 from dataclasses import dataclass, field
 
 
-@ConfRoot(agent=None).wrap
+@ConfRoot(agent_class=None).wrap
 @dataclass
 class DataBaseUserConfig:
-    database_user: str = 'admin'
-    database_password: str = 'default_password'
+  database_user: str = 'admin'
+  database_password: str = 'default_password'
 
 
-@ConfRoot(agent=JsonAgent).wrap
+@ConfRoot(agent_class=JsonAgent).wrap
 # 可通过agent_class指定配置文件格式
 # 此时默认配置文件名为 `config.json`
 @dataclass
 class AppConfig:
-    database_host: str = 'localhost'
-    database_port: int = 5432
-    # 可嵌套dataclass定义
-    user_config: DataBaseUserConfig = field(default_factory=DataBaseUserConfig)
+  database_host: str = 'localhost'
+  database_port: int = 5432
+  # 可嵌套dataclass定义
+  user_config: DataBaseUserConfig = field(default_factory=DataBaseUserConfig)
 
 
 app_config = AppConfig()

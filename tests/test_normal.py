@@ -49,7 +49,7 @@ class TestWrap(unittest.TestCase):
         self.assertEqual(app_config2.something, 43)
 
     def test_default_json_configuration(self):
-        @ConfRoot(agent=JsonAgent).wrap('config')
+        @ConfRoot(agent_class=JsonAgent).wrap('config')
         @dataclass
         class AppConfig:
             something: int = 42

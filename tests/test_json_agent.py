@@ -19,7 +19,7 @@ class TestJsonConfig(unittest.TestCase):
             pass  # 如果文件不存在，忽略错误（也可以根据需求抛出异常）
 
     def test_create(self):
-        @ConfRoot(agent=JsonAgent).wrap(self.location)
+        @ConfRoot(agent_class=JsonAgent).wrap(self.location)
         @dataclass
         class AppConfig:
             not_default: str
@@ -42,7 +42,7 @@ class TestJsonConfig(unittest.TestCase):
         self.assertFalse('admin' in content)
 
     def test_load(self):
-        @ConfRoot(agent=JsonAgent).wrap(self.location)
+        @ConfRoot(agent_class=JsonAgent).wrap(self.location)
         @dataclass
         class AppConfig:
             not_default: str
@@ -59,7 +59,7 @@ class TestJsonConfig(unittest.TestCase):
         self.assertEqual(app_config.database_port, 5432)
 
     def test_save(self):
-        @ConfRoot(agent=JsonAgent).wrap(self.location)
+        @ConfRoot(agent_class=JsonAgent).wrap(self.location)
         @dataclass
         class AppConfig:
             not_default: str

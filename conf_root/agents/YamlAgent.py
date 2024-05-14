@@ -32,7 +32,7 @@ class YamlAgent(BasicAgent):
         super().load(configuration)
         location = self.get_configuration_location(configuration)
         with open(location, encoding='utf-8') as file:
-            data = self.yaml.safe_load(file)
+            data = self.yaml.load(file)
         # 将dict展开为对象。
         return data
 
