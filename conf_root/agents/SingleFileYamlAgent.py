@@ -7,7 +7,7 @@ from conf_root.Configuration import Configuration
 from conf_root.agents.BasicAgent import BasicAgent
 
 
-class RuamelYamlAgent(BasicAgent):
+class SingleFileYamlAgent(BasicAgent):
     """
     Similar with yaml agent, but save in single file.
     """

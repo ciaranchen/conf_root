@@ -42,9 +42,9 @@ app_config.load()
 #### `ConfRoot(path = None, agent_class: Optional[Type[BasicAgent]] = YamlAgent)`
 
 - path 为基本路径。当它为None时，将会设置为当前文件路径。
-- agent_class 为配置存储的形式。当前支持JsonAgent/YamlAgent/RuamelAgent。默认为YamlAgent。
+- agent_class 为配置存储的形式。当前支持JsonAgent/YamlAgent/SingleFileYamlAgent。默认为YamlAgent。
     - 对于存储到多个文件的agent（JsonAgent、YamlAgent），path是配置存储的文件夹路径。
-    - 对于存储到单个文件的agent（RuamelAgent），path是配置存储的文件路径。
+    - 对于存储到单个文件的agent（SingleFileYamlAgent），path是配置存储的文件路径。
     - 如果指定为None，可以不产生配置文件存储；同时也不会为类添加save与load方法。
     - 可以继承BasicAgent进行拓展以适配更多类型的序列化方式。
 

@@ -5,15 +5,15 @@ import unittest
 from dataclasses import dataclass
 
 from conf_root import ConfRoot
-from conf_root.agents.RuamelYamlAgent import RuamelYamlAgent
+from conf_root.agents.SingleFileYamlAgent import SingleFileYamlAgent
 
 
-class TestRuamelYamlAgent(unittest.TestCase):
+class TestSingleFileYamlAgent(unittest.TestCase):
     location = 'settings.yml'
 
     def __init__(self, methodName="runTest"):
         super().__init__(methodName)
-        self.conf_root = ConfRoot(self.location, agent_class=RuamelYamlAgent)
+        self.conf_root = ConfRoot(self.location, agent_class=SingleFileYamlAgent)
 
     @classmethod
     def tearDownClass(cls):

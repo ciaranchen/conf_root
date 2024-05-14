@@ -18,7 +18,7 @@ class AppConfig:
     nc_default: NestedConfig = dataclass_field(default_factory=NestedConfig)
 
 
-class TestConfig(unittest.TestCase):
+class TestNestedDataclass(unittest.TestCase):
     def __init__(self, methodName="runTest"):
         super().__init__(methodName)
         self.location = 'nested_config.yml'

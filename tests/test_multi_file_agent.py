@@ -2,13 +2,15 @@ import os
 import unittest
 from dataclasses import dataclass
 
-from conf_root import ConfRoot
+from conf_root import ConfRoot, YamlAgent, JsonAgent
 
 
 class TestYamlAgent(unittest.TestCase):
     def __init__(self, methodName="runTest"):
         super().__init__(methodName)
-        self.location = 'settings.yml'
+        self.agent = YamlAgent
+        self.location = 'settings.' + self.agent.default_extension
+        self.test_load_content = "database_host: 127.0.0.1\ndatabase_port: 5432"
 
     def tearDown(self):
         # 这个方法将在每个测试方法结束后运行
@@ -19,7 +21,7 @@ class TestYamlAgent(unittest.TestCase):
             pass  # 如果文件不存在，忽略错误（也可以根据需求抛出异常）
 
     def test_create(self):
-        @ConfRoot().wrap(self.location)
+        @ConfRoot(agent_class=self.agent).wrap(self.location)
         @dataclass
         class AppConfig:
             not_default: str
@@ -42,14 +44,12 @@ class TestYamlAgent(unittest.TestCase):
         self.assertFalse('admin' in content)
 
     def test_load(self):
-        content = """database_host: 127.0.0.1
-database_port: 5432
-"""
+        content = self.test_load_content
         # 将处理后的内容写回文件（可以先备份原文件）
         with open(self.location, 'w') as file:
             file.write(content)
 
-        @ConfRoot().wrap(self.location)
+        @ConfRoot(agent_class=self.agent).wrap(self.location)
         @dataclass
         class AppConfig:
             not_default: str
@@ -61,7 +61,7 @@ database_port: 5432
         self.assertEqual(app_config.database_port, 5432)
 
     def test_save(self):
-        @ConfRoot().wrap(self.location)
+        @ConfRoot(agent_class=self.agent).wrap(self.location)
         @dataclass
         class AppConfig:
             not_default: str
@@ -81,3 +81,11 @@ database_port: 5432
         self.assertTrue('192.168.1.1' in content)
         self.assertTrue('3309' in content)
         self.assertTrue('admin' in content)
+
+
+class TestJsonConfig(TestYamlAgent):
+    def __init__(self, methodName="runTest"):
+        super().__init__(methodName)
+        self.agent = JsonAgent
+        self.location = 'settings.' + self.agent.default_extension
+        self.test_load_content = """{"database_host": "127.0.0.1", "database_port": 5432}"""
