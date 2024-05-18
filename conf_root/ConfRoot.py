@@ -1,11 +1,16 @@
 import argparse
-from dataclasses import make_dataclass, is_dataclass, MISSING
+from dataclasses import make_dataclass, is_dataclass, MISSING, dataclass
 from pathlib import Path
 from typing import Optional, Type
+import logging
 
 from conf_root.Configuration import Configuration
 from conf_root.agents.BasicAgent import BasicAgent
 from conf_root.agents.YamlAgent import YamlAgent
+
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                    datefmt='%m-%d %H:%M:%S')
+logger = logging.getLogger(__name__)
 
 
 class ConfRoot:
@@ -19,7 +24,8 @@ class ConfRoot:
     def wrap(self, *args, **kwargs):
         def decorator(cls, name: Optional[str] = None):
             if not is_dataclass(cls):
-                raise TypeError(f"Target class must be a dataclass, got {cls}")
+                logger.debug(f'decorate class {cls.__qualname__} to dataclass...')
+                cls = dataclass(cls)
             if name is None:
                 name = cls.__qualname__.replace('<locals>.', '')
 
