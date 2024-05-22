@@ -14,12 +14,13 @@ logger = logging.getLogger(__name__)
 
 
 class ConfRoot:
-    def __init__(self, path: str = None, agent_class: Optional[Type[BasicAgent]] = YamlAgent):
+    def __init__(self, path: str = None, agent_class: Optional[Type[BasicAgent]] = YamlAgent, dynamic=False):
         self.path = Path(path) if path is not None else Path()
         self.agent_class = agent_class
         self.persist = (agent_class is not None)
         if self.persist:
             self.agent = self.agent_class(self.path)
+        self.dynamic = dynamic
 
     def wrap(self, *args, **kwargs):
         def decorator(cls, name: Optional[str] = None):
@@ -39,16 +40,16 @@ class ConfRoot:
                 origin_init(_self, *args, **kwargs)
                 self.post_init(_self, configuration)
 
-            def save(_self):
-                return self.agent.save(configuration, _self)
-
-            def load(_self):
-                data = self.agent.load(configuration)
-                configuration.data2obj(_self, data)
-
             decorated_init.__name__ = '__init__'
             cls.__init__ = decorated_init
-            if self.persist:
+            if self.persist and self.dynamic:
+                def save(_self):
+                    return self.agent.save(configuration, _self)
+
+                def load(_self):
+                    data = self.agent.load(configuration)
+                    configuration.data2obj(_self, data)
+
                 cls.save = save
                 cls.load = load
             return cls

@@ -26,20 +26,17 @@ class AppConfig:
     database_port: int = 5432
 
 
-# 检测是否存在配置文件(文件名为name+后缀)(如果未传入name参数，文件名为 `{cls.__qual_name__}.yml`) ，如果不存在则按照默认值新建文件。
+# 检测是否存在配置文件(文件名为name+后缀)(如果未传入name参数，文件名为 `{cls.__qual_name__}.yml`)。
+# 如不存在则按照默认值新建文件（或在文件中添加字段）。
 # 如存在配置文件，则加载文件中的配置。
 app_config = AppConfig()
-# 对 app_config 内容改动后，可通过以下方式写入配置文件
-app_config.save()
-# 对 配置文件 内容改动后，可通过以下方式加载配置文件
-app_config.load()
 ```
 
 > note: dataclass 中的字段需指定类型。如果不指定类型，将被视为类变量而不会被解析为dataclass中的字段。这个库在dataclass的基础上进行解析，将无法直接处理类变量。
 
 ### 参数解释
 
-#### `ConfRoot(path = None, agent_class: Optional[Type[BasicAgent]] = YamlAgent)`
+#### `ConfRoot(path = None, agent_class: Optional[Type[BasicAgent]] = YamlAgent, dynamic=False)`
 
 - path 为基本路径。当它为None时，将会设置为当前文件路径。
 - agent_class 为配置存储的形式。当前支持JsonAgent/YamlAgent/SingleFileYamlAgent。默认为YamlAgent。
@@ -47,6 +44,7 @@ app_config.load()
     - 对于存储到单个文件的agent（SingleFileYamlAgent），path是配置存储的文件路径。
     - 如果指定为None，可以不产生配置文件存储；同时也不会为类添加save与load方法。
     - 可以继承BasicAgent进行拓展以适配更多类型的序列化方式。
+- dynamic 为是否允许动态加载与变更配置文件。默认为False。如果设定为True，将会为类添加`save` 和 `load`方法来动态写入或读取配置文件。
 
 #### `ConfRoot.wrap`
 
