@@ -21,7 +21,7 @@ class TestYamlAgent(unittest.TestCase):
             pass  # 如果文件不存在，忽略错误（也可以根据需求抛出异常）
 
     def test_create(self):
-        @ConfRoot(agent_class=self.agent).wrap(self.location)
+        @ConfRoot(agent_class=self.agent).config(self.location)
         @dataclass
         class AppConfig:
             not_default: str
@@ -49,7 +49,7 @@ class TestYamlAgent(unittest.TestCase):
         with open(self.location, 'w') as file:
             file.write(content)
 
-        @ConfRoot(agent_class=self.agent).wrap(self.location, dynamic=True)
+        @ConfRoot(agent_class=self.agent).config(self.location, dynamic=True)
         @dataclass
         class AppConfig:
             not_default: str
@@ -61,7 +61,7 @@ class TestYamlAgent(unittest.TestCase):
         self.assertEqual(app_config.database_port, 5432)
 
     def test_save(self):
-        @ConfRoot(agent_class=self.agent).wrap(self.location, dynamic=True)
+        @ConfRoot(agent_class=self.agent).config(self.location, dynamic=True)
         @dataclass
         class AppConfig:
             not_default: str

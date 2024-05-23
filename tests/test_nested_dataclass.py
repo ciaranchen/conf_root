@@ -5,7 +5,7 @@ from dataclasses import dataclass, field as dataclass_field
 from conf_root import ConfRoot
 
 
-@ConfRoot(agent_class=None).wrap()
+@ConfRoot(agent_class=None).config()
 @dataclass
 class NestedConfig:
     config1: str = 'nest_config1'
@@ -32,7 +32,7 @@ class TestNestedDataclass(unittest.TestCase):
             pass  # 如果文件不存在，忽略错误（也可以根据需求抛出异常）
 
     def test_create(self):
-        DecoratedConfig = ConfRoot().wrap(self.location)(AppConfig)
+        DecoratedConfig = ConfRoot().config(self.location)(AppConfig)
         app_config = DecoratedConfig(NestedConfig(config1='defined1', config2='defined2'))
         self.assertEqual(app_config.nc_default.config1, 'nest_config1')
         self.assertEqual(app_config.nc_default.config2, 'nest_config2')
@@ -62,7 +62,7 @@ nc_defined:
         with open(self.location, 'w') as file:
             file.write(content)
 
-        DecoratedConfig = ConfRoot().wrap(self.location, dynamic=True)(AppConfig)
+        DecoratedConfig = ConfRoot().config(self.location, dynamic=True)(AppConfig)
         app_config = DecoratedConfig(NestedConfig(config1='defined1', config2='defined2'))
         self.assertEqual(app_config.nc_default.config1, 'default_load1')
         self.assertEqual(app_config.nc_default.config2, 'nest_config2')
@@ -71,7 +71,7 @@ nc_defined:
         self.assertEqual(app_config.nc_defined.config2, 'load2')
 
     def test_save(self):
-        DecoratedConfig = ConfRoot().wrap(self.location, dynamic=True)(AppConfig)
+        DecoratedConfig = ConfRoot().config(self.location, dynamic=True)(AppConfig)
         app_config = DecoratedConfig(NestedConfig(config1='defined1', config2='defined2'))
         app_config.nc_default.config1 = 'save_default'
         app_config.nc_defined.config1 = 'save_defined'

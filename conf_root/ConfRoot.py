@@ -21,7 +21,7 @@ class ConfRoot:
         if self.persist:
             self.agent = self.agent_class(self.path)
 
-    def wrap(self, *args, **kwargs):
+    def config(self, *args, **kwargs):
         def decorator(cls, name: Optional[str] = None, dynamic=False):
             if not is_dataclass(cls):
                 logger.debug(f'decorate class {cls.__qualname__} to dataclass...')
@@ -123,7 +123,7 @@ class ConfRoot:
         fields = sorted(fields, key=lambda x: x[2] == MISSING, reverse=True)
 
         cls = make_dataclass(cls_name.replace(f'.{self.agent.default_extension}', ''), fields)
-        return self.wrap(cls_name)(cls)
+        return self.config(cls_name)(cls)
 
     @staticmethod
     def is_configuration_class(cls_or_instance):

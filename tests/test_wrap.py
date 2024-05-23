@@ -31,39 +31,39 @@ class TestWrap(unittest.TestCase):
             pass  # 如果文件不存在，忽略错误（也可以根据需求抛出异常）
 
     def test_wrap_direct(self):
-        # @ConfRoot().wrap
-        ConfRoot().wrap(self.conf_class)()
+        # @ConfRoot().config
+        ConfRoot().config(self.conf_class)()
         self.assertTrue(os.path.exists(self.q_location))
 
     def test_wrap_no_args(self):
-        # @ConfRoot().wrap()
-        ConfRoot().wrap()(self.conf_class)()
+        # @ConfRoot().config()
+        ConfRoot().config()(self.conf_class)()
         self.assertTrue(os.path.exists(self.q_location))
 
     def test_wrap_with_args(self):
-        # @ConfRoot().wrap(self.location)
-        ConfRoot().wrap(self.location)(self.conf_class)()
+        # @ConfRoot().config(self.location)
+        ConfRoot().config(self.location)(self.conf_class)()
         self.assertTrue(os.path.exists(self.location))
 
     def test_wrap_with_named_args(self):
-        # @ConfRoot().wrap(name=self.location)
-        ConfRoot().wrap(name=self.location)(self.conf_class)()
+        # @ConfRoot().config(name=self.location)
+        ConfRoot().config(name=self.location)(self.conf_class)()
         self.assertTrue(os.path.exists(self.location))
 
     def test_wrap_dynamic(self):
-        conf = ConfRoot().wrap(self.location, True)(self.conf_class)()
+        conf = ConfRoot().config(self.location, True)(self.conf_class)()
         self.assertTrue(os.path.exists(self.location))
         self.assertTrue(hasattr(conf, 'save'))
         self.assertTrue(hasattr(conf, 'load'))
 
     def test_wrap_named_dynamic(self):
-        conf = ConfRoot().wrap(dynamic=True)(self.conf_class)()
+        conf = ConfRoot().config(dynamic=True)(self.conf_class)()
         self.assertTrue(os.path.exists(self.q_location))
         self.assertTrue(hasattr(conf, 'save'))
         self.assertTrue(hasattr(conf, 'load'))
 
     def test_without_dataclass(self):
-        @ConfRoot().wrap(self.location)
+        @ConfRoot().config(self.location)
         class AppConfig:
             num1: int = 42
 

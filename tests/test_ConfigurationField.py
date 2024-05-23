@@ -18,7 +18,7 @@ class TestConfigurationField(unittest.TestCase):
             pass  # 如果文件不存在，忽略错误（也可以根据需求抛出异常）
 
     def test_default_factory(self):
-        @ConfRoot(agent_class=None).wrap
+        @ConfRoot(agent_class=None).config
         class AppConfig:
             name: list = config_field(default_factory=list)
 
@@ -27,7 +27,7 @@ class TestConfigurationField(unittest.TestCase):
         self.assertEqual(len(app_config.name), 0)
 
     def test_serialize(self):
-        @ConfRoot().wrap(self.location, dynamic=True)
+        @ConfRoot().config(self.location, dynamic=True)
         class AppConfig:
             name: str = config_field(default='abc', serialize=lambda x: 'random_name',
                                      deserialize=lambda x: 'cde')
@@ -42,7 +42,7 @@ class TestConfigurationField(unittest.TestCase):
         self.assertEqual(app_config.name, 'cde')
 
     def test_serialize_with_list(self):
-        @ConfRoot().wrap(self.location, dynamic=True)
+        @ConfRoot().config(self.location, dynamic=True)
         class AppConfig:
             user_list: List = config_field(default_factory=list,
                                            serialize=lambda xs: ','.join([x.lower() for x in xs]),

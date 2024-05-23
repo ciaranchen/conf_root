@@ -16,14 +16,14 @@ class TestSingleFileYamlAgent(unittest.TestCase):
         super().__init__(methodName)
         self.conf_root = ConfRoot(self.location, agent_class=SingleFileYamlAgent)
 
-        @self.conf_root.wrap(dynamic=True)
+        @self.conf_root.config(dynamic=True)
         @dataclass
         class AppConfig:
             not_default: str
             database_host: str = 'localhost'
             database_port: int = 5432
 
-        @self.conf_root.wrap
+        @self.conf_root.config
         @dataclass
         class AppConfig2:
             one_thing: int = 42

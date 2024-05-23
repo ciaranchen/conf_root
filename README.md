@@ -21,10 +21,10 @@
 from conf_root import ConfRoot
 
 
-# @ConfRoot().wrap(name='config')
-# @ConfRoot().wrap
+# @ConfRoot().config(name='config')
+# @ConfRoot().config
 # 这个装饰器也支持上面这两种调用方式
-@ConfRoot().wrap('config')
+@ConfRoot().config('config')
 class AppConfig:
     database_host: str = 'localhost'
     database_port: int = 5432
@@ -36,7 +36,7 @@ class AppConfig:
 app_config = AppConfig()
 # 请注意：对于以下这种情况，因为初始化的时候是按照默认值来进行存储的，在配置文件中依然保存的是 'localhost'。
 # 在没有动态地手动操作的情况下，配置文件的等级高于代码的等级。我们希望建立一种印象：配置文件是更优先的。
-# 如果您确实想要动态修改yml中的值，请参考`wrap`中的`dynamic`参数。
+# 如果您确实想要动态修改yml中的值，请参考`ConfRoot.config`中的`dynamic`参数。
 app_config2 = AppConfig('127.0.0.1')
 ```
 
@@ -51,7 +51,7 @@ app_config2 = AppConfig('127.0.0.1')
     - 如果指定为None，可以不产生配置文件存储；同时也不会为类添加save与load方法。
     - 可以继承BasicAgent进行拓展以适配更多类型的序列化方式。
 
-#### `ConfRoot.wrap`
+#### `ConfRoot.config`
 
 可以使用不同方式调用。详见上方示例。
 
@@ -110,13 +110,13 @@ from dataclasses import field
 from typing import List
 
 
-@ConfRoot(agent_class=None).wrap
+@ConfRoot(agent_class=None).config
 class DataBaseUserConfig:
     database_user: str = 'admin'
     database_password: str = 'default_password'
 
 
-@ConfRoot(agent_class=JsonAgent).wrap
+@ConfRoot(agent_class=JsonAgent).config
 # 可通过agent_class指定配置文件格式
 # 此时默认配置文件名为 `config.json`
 class AppConfig:
