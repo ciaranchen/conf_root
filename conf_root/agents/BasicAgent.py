@@ -33,14 +33,9 @@ class BasicAgent:
         pass
 
     @abstractmethod
-    def create(self, configuration: Configuration) -> None:
-        logger.debug(f'create with default in: {self.get_configuration_location(configuration)}')
-
-    @abstractmethod
     def load(self, configuration: Configuration) -> Dict[str, Any]:
         logger.debug(f'load from: {self.get_configuration_location(configuration)}')
-        pass
 
     @abstractmethod
-    def save(self, configuration: Configuration, obj: object) -> None:
+    def save(self, configuration: Configuration, data: Dict[str, Any]) -> None:
         logger.debug(f'save to: {self.get_configuration_location(configuration)}')

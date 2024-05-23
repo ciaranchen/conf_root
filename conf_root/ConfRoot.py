@@ -43,7 +43,8 @@ class ConfRoot:
             cls.__init__ = decorated_init
             if self.persist and dynamic:
                 def save(_self):
-                    return self.agent.save(configuration, _self)
+                    data = configuration.obj2data(_self)
+                    return self.agent.save(configuration, data)
 
                 def load(_self):
                     data = self.agent.load(configuration)
@@ -73,7 +74,8 @@ class ConfRoot:
                 configuration.data2obj(instance, data)
             else:
                 # 若文件不存在，根据默认值创建
-                self.agent.create(configuration)
+                data = configuration.defaults
+                self.agent.save(configuration, data)
 
     def from_argparse(self, parser: argparse.ArgumentParser, cls_name: str = 'argparse'):
         def get_default(action):

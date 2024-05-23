@@ -1,5 +1,6 @@
 import os
 import unittest
+from typing import List
 
 from conf_root import ConfRoot, config_field
 
@@ -39,6 +40,28 @@ class TestConfigurationField(unittest.TestCase):
         self.assertTrue('random_name' in content)
         app_config.load()
         self.assertEqual(app_config.name, 'cde')
+
+    def test_serialize_with_list(self):
+        @ConfRoot().wrap(self.location, dynamic=True)
+        class AppConfig:
+            user_list: List = config_field(default_factory=list,
+                                           serialize=lambda xs: ','.join([x.lower() for x in xs]),
+                                           deserialize=lambda s: [x.upper() for x in s.split(',')])
+
+        app_config = AppConfig(['Tom', 'Jerry'])
+        self.assertEqual(len(app_config.user_list), 2)
+        with open(self.location, 'r') as file:
+            content = file.read()
+        self.assertEqual(content.strip(), "user_list: ''")
+        # 由于默认值的原因，必须使用一次save。
+        app_config.save()
+        self.assertTrue(os.path.exists(self.location))
+        with open(self.location, 'r') as file:
+            content = file.read()
+        self.assertTrue('tom,jerry' in content)
+        app_config.load()
+        self.assertEqual(app_config.user_list[0], 'TOM')
+        self.assertEqual(app_config.user_list[1], 'JERRY')
 
 
 if __name__ == '__main__':

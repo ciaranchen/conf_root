@@ -34,6 +34,10 @@ class AppConfig:
 # 如不存在则按照默认值新建文件（或在文件中添加字段）。
 # 如存在配置文件，则加载文件中的配置。
 app_config = AppConfig()
+# 请注意：对于以下这种情况，因为初始化的时候是按照默认值来进行存储的，在配置文件中依然保存的是 'localhost'。
+# 在没有动态地手动操作的情况下，配置文件的等级高于代码的等级。我们希望建立一种印象：配置文件是更优先的。
+# 如果您确实想要动态修改yml中的值，请参考`wrap`中的`dynamic`参数。
+app_config2 = AppConfig('127.0.0.1')
 ```
 
 ### 参数解释
@@ -58,7 +62,7 @@ app_config = AppConfig()
 
 ## 解析 Argparse
 
-在科研项目中会出现一大堆parser.argument，我希望能将它们转换为配置文件，而不是每次都要记录运行时的命令行参数。
+在科研项目中会出现一大堆parser.argument，仅需添加两行代码就可以将其命令行参数配置转换为配置文件，并在配置文件中剪辑参数。不必重复输入一长串的命令行参数，也不再需要专门的`run.sh`或者`run.bat`。
 
 ```python
 import argparse
@@ -120,6 +124,9 @@ class AppConfig:
     database_port: int = 5432
     # 可嵌套定义, 支持使用dataclasses的field。
     user_config: DataBaseUserConfig = field(default_factory=DataBaseUserConfig)
+    # 使用 config_field，支持dataclasses.field 的所有参数；同时可以自定义serialize方式与deserialize方法
+    user_list: List = config_field(default_factory=list, serialize=lambda xs: ','.join(xs),
+                                   deserialize=lambda s: s.split(','))
 
 
 app_config = AppConfig()

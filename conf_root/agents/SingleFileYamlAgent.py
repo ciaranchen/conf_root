@@ -29,27 +29,20 @@ class SingleFileYamlAgent(BasicAgent):
         self.data = self._load()
         return configuration.name in self.data
 
-    def create(self, configuration: Configuration) -> None:
-        super().create(configuration)
-        self.data[configuration.name] = configuration.defaults
-
-        with open(self.location, 'w') as f:
-            self.yaml.dump(self.data, f)
-
     def _load(self):
+        if not os.path.exists(self.location):
+            return {}
         with open(self.location, 'r') as f:
             return self.yaml.load(f)
 
-    def load(self, configuration: Configuration) -> None:
+    def load(self, configuration: Configuration):
         super().load(configuration)
         res = self._load()
         return res[configuration.name]
 
-    def save(self, configuration: Configuration, obj: object) -> None:
-        super().save(configuration, obj)
+    def save(self, configuration: Configuration, data) -> None:
+        super().save(configuration, data)
         total_data = self._load()
-
-        data = configuration.obj2data(obj)
         total_data[configuration.name] = data
 
         with open(self.location, 'w') as f:
