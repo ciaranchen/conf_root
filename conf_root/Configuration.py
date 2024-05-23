@@ -8,23 +8,23 @@ logger = logging.getLogger(__name__)
 
 
 class ConfigurationField(DataclassField):
-    def __init__(self, default, default_factory, init, repr, hash, compare, metadata, kw_only,
+    def __init__(self, default, default_factory, init, repr, hash, compare, metadata,
                  serialize: Callable = MISSING, deserialize: Callable = MISSING):
-        super().__init__(default, default_factory, init, repr, hash, compare, metadata, kw_only)
+        super().__init__(default, default_factory, init, repr, hash, compare, metadata)
         self.serialize = serialize
         self.deserialize = deserialize
 
 
-def configuration_field(*, default=MISSING, default_factory=MISSING, init=True, repr=True,
-                        hash=None, compare=True, metadata=None, kw_only=MISSING,
-                        serialize: Callable = MISSING, deserialize: Callable = MISSING):
+def config_field(*, default=MISSING, default_factory=MISSING, init=True, repr=True,
+                 hash=None, compare=True, metadata=None,
+                 serialize: Callable = MISSING, deserialize: Callable = MISSING):
     """
     Copy from dataclass field
     """
     if default is not MISSING and default_factory is not MISSING:
         raise ValueError('cannot specify both default and default_factory')
     return ConfigurationField(default, default_factory, init, repr, hash, compare,
-                              metadata, kw_only, serialize, deserialize)
+                              metadata, serialize=serialize, deserialize=deserialize)
 
 
 class Configuration:

@@ -1,8 +1,7 @@
 import os
 import unittest
 
-from conf_root import ConfRoot
-from conf_root.Configuration import ConfigurationField, configuration_field
+from conf_root import ConfRoot, config_field
 
 
 class TestConfigurationField(unittest.TestCase):
@@ -20,7 +19,7 @@ class TestConfigurationField(unittest.TestCase):
     def test_default_factory(self):
         @ConfRoot(agent_class=None).wrap
         class AppConfig:
-            name: list = configuration_field(default_factory=list)
+            name: list = config_field(default_factory=list)
 
         app_config = AppConfig()
         self.assertTrue(isinstance(app_config.name, list))
@@ -29,8 +28,8 @@ class TestConfigurationField(unittest.TestCase):
     def test_serialize(self):
         @ConfRoot().wrap(self.location, dynamic=True)
         class AppConfig:
-            name: str = configuration_field(default='abc', serialize=lambda x: 'random_name',
-                                            deserialize=lambda x: 'cde')
+            name: str = config_field(default='abc', serialize=lambda x: 'random_name',
+                                     deserialize=lambda x: 'cde')
 
         app_config = AppConfig()
         self.assertEqual(app_config.name, 'abc')
