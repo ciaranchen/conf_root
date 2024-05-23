@@ -1,9 +1,8 @@
 import os.path
-from typing import Any, Dict
+from ruamel.yaml import YAML
 
 from conf_root.Configuration import Configuration
 from conf_root.agents.BasicAgent import BasicAgent
-from ruamel.yaml import YAML
 
 
 class YamlAgent(BasicAgent):
@@ -13,18 +12,20 @@ class YamlAgent(BasicAgent):
         super().__init__(location)
         self.yaml = YAML()
         self.yaml.preserve_quotes = True
+        self.yaml.indent(mapping=2, sequence=4, offset=2)
 
     def exist(self, configuration: Configuration) -> bool:
         location = self.get_configuration_location(configuration)
         return os.path.exists(location)
 
-    def load(self, configuration) -> Dict[str, Any]:
+    def load(self, configuration):
         super().load(configuration)
         location = self.get_configuration_location(configuration)
+        if not os.path.exists(location):
+            return {}
         with open(location, encoding='utf-8') as file:
-            data = self.yaml.load(file)
-        # 将dict展开为对象。
-        return data
+            # 将dict展开为对象。
+            return self.yaml.load(file)
 
     def save(self, configuration, data):
         super().save(configuration, data)

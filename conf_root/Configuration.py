@@ -1,10 +1,14 @@
 import logging
-from dataclasses import MISSING, fields as dataclasses_fields, Field as DataclassField, is_dataclass
+from dataclasses import MISSING, fields as dataclasses_fields, Field as DataclassField, dataclass
 from typing import Any, Dict, Optional, Callable
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     datefmt='%m-%d %H:%M:%S')
 logger = logging.getLogger(__name__)
+
+
+def is_config_class(cls_or_instance):
+    return getattr(cls_or_instance, '__CONF_ROOT__', None) is not None
 
 
 class ConfigurationField(DataclassField):
@@ -27,10 +31,10 @@ def config_field(*, default=MISSING, default_factory=MISSING, init=True, repr=Tr
                               metadata, serialize=serialize, deserialize=deserialize)
 
 
+@dataclass
 class Configuration:
-    def __init__(self, name: str, _cls):
-        self.name: str = name
-        self.cls = _cls
+    name: str
+    cls: Any
 
     @staticmethod
     def field_default(field):
@@ -40,10 +44,10 @@ class Configuration:
             return field.default_factory()
         return None
 
-    @property
-    def defaults(self) -> Dict[str, Any]:
+    @staticmethod
+    def defaults(instance) -> Dict[str, Any]:
         res = {}
-        for field in dataclasses_fields(self.cls):
+        for field in dataclasses_fields(instance):
             default = Configuration.field_default(field)
             if (serialize_func := getattr(field, 'serialize', MISSING)) != MISSING:
                 res[field.name] = serialize_func(default)
@@ -57,7 +61,7 @@ class Configuration:
         """
         递归地将dataclass实例及其嵌套的dataclass字段转换为字典。
         """
-        if is_dataclass(obj):
+        if is_config_class(obj):
             # 对于dataclass实例，递归地处理其字段
             res = {}
             for field in dataclasses_fields(obj):
@@ -74,7 +78,7 @@ class Configuration:
 
     @staticmethod
     def recursive_data2obj(cls, data: Optional[Dict[str, Any]]) -> object:
-        if is_dataclass(cls):
+        if is_config_class(cls):
             kwargs = {}
             for field in dataclasses_fields(cls):
                 value = data.get(field.name, None)

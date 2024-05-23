@@ -1,13 +1,12 @@
 import os
 from pathlib import Path
 
-from ruamel.yaml import YAML
-
 from conf_root.Configuration import Configuration
 from conf_root.agents.BasicAgent import BasicAgent
+from conf_root.agents.YamlAgent import YamlAgent
 
 
-class SingleFileYamlAgent(BasicAgent):
+class SingleFileYamlAgent(YamlAgent):
     """
     Similar with yaml agent, but save in single file.
     """
@@ -18,16 +17,11 @@ class SingleFileYamlAgent(BasicAgent):
         super().__init__(parent_directory)
         self.location = Path(location)
 
-        self.yaml = YAML()
-        self.yaml.preserve_quotes = True
-        self.yaml.indent(mapping=2, sequence=4, offset=2)
-        self.data = {}
-
     def exist(self, configuration: Configuration) -> bool:
         if not os.path.exists(self.location):
             return False
-        self.data = self._load()
-        return configuration.name in self.data
+        data = self._load()
+        return configuration.name in data
 
     def _load(self):
         if not os.path.exists(self.location):
@@ -36,12 +30,12 @@ class SingleFileYamlAgent(BasicAgent):
             return self.yaml.load(f)
 
     def load(self, configuration: Configuration):
-        super().load(configuration)
+        BasicAgent.load(self, configuration)
         res = self._load()
         return res[configuration.name]
 
     def save(self, configuration: Configuration, data) -> None:
-        super().save(configuration, data)
+        BasicAgent.save(self, configuration, data)
         total_data = self._load()
         total_data[configuration.name] = data
 

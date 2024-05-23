@@ -74,7 +74,7 @@ class ConfRoot:
                 configuration.data2obj(instance, data)
             else:
                 # 若文件不存在，根据默认值创建
-                data = configuration.defaults
+                data = configuration.defaults(instance)
                 self.agent.save(configuration, data)
 
     def from_argparse(self, parser: argparse.ArgumentParser, cls_name: str = 'argparse'):
@@ -124,7 +124,3 @@ class ConfRoot:
 
         cls = make_dataclass(cls_name.replace(f'.{self.agent.default_extension}', ''), fields)
         return self.config(cls_name)(cls)
-
-    @staticmethod
-    def is_configuration_class(cls_or_instance):
-        return getattr(cls_or_instance, '__CONF_ROOT__', None) is not None
