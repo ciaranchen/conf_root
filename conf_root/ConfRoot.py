@@ -29,7 +29,7 @@ class ConfRoot:
             if name is None:
                 name = cls.__qualname__.replace('<locals>.', '')
 
-            configuration = Configuration.from_wrapper(cls, name)
+            configuration = Configuration(name, cls)
             setattr(cls, '__CONF_ROOT__', configuration)
 
             # 覆盖其 __init__ 函数
@@ -122,3 +122,7 @@ class ConfRoot:
 
         cls = make_dataclass(cls_name.replace(f'.{self.agent.default_extension}', ''), fields)
         return self.wrap(cls_name)(cls)
+
+    @staticmethod
+    def is_configuration_class(cls_or_instance):
+        return getattr(cls_or_instance, '__CONF_ROOT__', None) is not None

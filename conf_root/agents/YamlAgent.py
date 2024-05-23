@@ -11,7 +11,7 @@ class YamlAgent(BasicAgent):
 
     def __init__(self, location):
         super().__init__(location)
-        self.yaml = YAML(typ='safe')
+        self.yaml = YAML()
 
     def exist(self, configuration: Configuration) -> bool:
         location = self.get_configuration_location(configuration)
