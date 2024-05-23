@@ -49,7 +49,7 @@ class TestYamlAgent(unittest.TestCase):
         with open(self.location, 'w') as file:
             file.write(content)
 
-        @ConfRoot(agent_class=self.agent).wrap(self.location)
+        @ConfRoot(agent_class=self.agent).wrap(self.location, dynamic=True)
         @dataclass
         class AppConfig:
             not_default: str
@@ -61,7 +61,7 @@ class TestYamlAgent(unittest.TestCase):
         self.assertEqual(app_config.database_port, 5432)
 
     def test_save(self):
-        @ConfRoot(agent_class=self.agent).wrap(self.location)
+        @ConfRoot(agent_class=self.agent).wrap(self.location, dynamic=True)
         @dataclass
         class AppConfig:
             not_default: str

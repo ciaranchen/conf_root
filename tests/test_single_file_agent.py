@@ -16,7 +16,7 @@ class TestSingleFileYamlAgent(unittest.TestCase):
         super().__init__(methodName)
         self.conf_root = ConfRoot(self.location, agent_class=SingleFileYamlAgent)
 
-        @self.conf_root.wrap
+        @self.conf_root.wrap(dynamic=True)
         @dataclass
         class AppConfig:
             not_default: str

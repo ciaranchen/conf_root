@@ -36,7 +36,7 @@ app_config = AppConfig()
 
 ### 参数解释
 
-#### `ConfRoot(path = None, agent_class: Optional[Type[BasicAgent]] = YamlAgent, dynamic=False)`
+#### `ConfRoot(path = None, agent_class: Optional[Type[BasicAgent]] = YamlAgent)`
 
 - path 为基本路径。当它为None时，将会设置为当前文件路径。
 - agent_class 为配置存储的形式。当前支持JsonAgent/YamlAgent/SingleFileYamlAgent。默认为YamlAgent。
@@ -44,7 +44,6 @@ app_config = AppConfig()
     - 对于存储到单个文件的agent（SingleFileYamlAgent），path是配置存储的文件路径。
     - 如果指定为None，可以不产生配置文件存储；同时也不会为类添加save与load方法。
     - 可以继承BasicAgent进行拓展以适配更多类型的序列化方式。
-- dynamic 为是否允许动态加载与变更配置文件。默认为False。如果设定为True，将会为类添加`save` 和 `load`方法来动态写入或读取配置文件。
 
 #### `ConfRoot.wrap`
 
@@ -53,6 +52,7 @@ app_config = AppConfig()
 - name。该配置在path中的位置。
     - 对于多文件存储，name为文件名。指定时可以带上agent相应的后缀名。
     - 对于单文件存储，name为在文件中的section名。
+- dynamic 为是否允许动态加载与变更配置文件。默认为False。如果设定为True，将会为类添加`save` 和 `load`方法来动态写入或读取配置文件。
 
 ## 解析 Argparse
 
@@ -106,8 +106,8 @@ from dataclasses import dataclass, field
 @ConfRoot(agent_class=None).wrap
 @dataclass
 class DataBaseUserConfig:
-  database_user: str = 'admin'
-  database_password: str = 'default_password'
+    database_user: str = 'admin'
+    database_password: str = 'default_password'
 
 
 @ConfRoot(agent_class=JsonAgent).wrap
@@ -115,10 +115,10 @@ class DataBaseUserConfig:
 # 此时默认配置文件名为 `config.json`
 @dataclass
 class AppConfig:
-  database_host: str = 'localhost'
-  database_port: int = 5432
-  # 可嵌套dataclass定义
-  user_config: DataBaseUserConfig = field(default_factory=DataBaseUserConfig)
+    database_host: str = 'localhost'
+    database_port: int = 5432
+    # 可嵌套dataclass定义
+    user_config: DataBaseUserConfig = field(default_factory=DataBaseUserConfig)
 
 
 app_config = AppConfig()

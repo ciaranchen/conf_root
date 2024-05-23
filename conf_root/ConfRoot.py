@@ -14,16 +14,15 @@ logger = logging.getLogger(__name__)
 
 
 class ConfRoot:
-    def __init__(self, path: str = None, agent_class: Optional[Type[BasicAgent]] = YamlAgent, dynamic=False):
+    def __init__(self, path: str = None, agent_class: Optional[Type[BasicAgent]] = YamlAgent):
         self.path = Path(path) if path is not None else Path()
         self.agent_class = agent_class
         self.persist = (agent_class is not None)
         if self.persist:
             self.agent = self.agent_class(self.path)
-        self.dynamic = dynamic
 
     def wrap(self, *args, **kwargs):
-        def decorator(cls, name: Optional[str] = None):
+        def decorator(cls, name: Optional[str] = None, dynamic=False):
             if not is_dataclass(cls):
                 logger.debug(f'decorate class {cls.__qualname__} to dataclass...')
                 cls = dataclass(cls)
@@ -42,7 +41,7 @@ class ConfRoot:
 
             decorated_init.__name__ = '__init__'
             cls.__init__ = decorated_init
-            if self.persist and self.dynamic:
+            if self.persist and dynamic:
                 def save(_self):
                     return self.agent.save(configuration, _self)
 
@@ -61,7 +60,7 @@ class ConfRoot:
         if len(args) >= 1:
             # 有args的情况下，取第一个args为 config 名称。
             # @wrap('config'）
-            return lambda cls: decorator(cls, args[0])
+            return lambda cls: decorator(cls, *args, **kwargs)
         # 无args, 只有kwargs的情况下，直接给出decorator
         # @wrap() or @wrap(name='config')
         return lambda cls: decorator(cls, **kwargs)
