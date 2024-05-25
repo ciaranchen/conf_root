@@ -1,8 +1,11 @@
 import argparse
 import os
 import unittest
-import yaml
+from ruamel.yaml import YAML
+
 from conf_root import ConfRoot
+
+yaml = YAML()
 
 
 class TestArgparse(unittest.TestCase):
@@ -32,7 +35,7 @@ class TestArgparse(unittest.TestCase):
 
         self.assertTrue(os.path.exists(self.location))
         with open(self.location, encoding='utf-8') as yaml_file:
-            data = yaml.safe_load(yaml_file)
+            data = yaml.load(yaml_file)
         self.assertEqual(data['arg1'], 10)
         # 配置文件保存的是默认值 而非传入值。
         self.assertEqual(data['arg2'], 20)
@@ -59,7 +62,7 @@ class TestArgparse(unittest.TestCase):
 
         self.assertTrue(os.path.exists(self.location))
         with open(self.location, encoding='utf-8') as yaml_file:
-            data = yaml.safe_load(yaml_file)
+            data = yaml.load(yaml_file)
         # 配置文件中不会保存没有默认参数的值。
         self.assertFalse(hasattr(data, 'arg1'))
         self.assertFalse(hasattr(data, 'arg2'))
