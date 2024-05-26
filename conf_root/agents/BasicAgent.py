@@ -34,10 +34,13 @@ class MultiFileAgent:
             directory, filename = os.path.split(path)
             new_filename = filename + self.default_extension
             new_path = os.path.join(directory, new_filename)
-            return new_path
+            return Path(new_path)
         else:
             # 如果后缀名已经存在或者文件路径没有后缀名（即ext为空），则直接返回原路径
             return path
+
+    def exist(self, configuration: Configuration) -> bool:
+        return self.get_configuration_location(configuration).exists()
 
 
 class OneFileAgent(MultiFileAgent):
@@ -51,15 +54,15 @@ class OneFileAgent(MultiFileAgent):
     def get_configuration_location(self, configuration: Configuration) -> Path:
         return self.location
 
+    @abstractmethod
+    def exist(self, configuration: Configuration) -> bool:
+        pass
+
 
 class BasicAgent(MultiFileAgent):
     """
     此抽象类为所有Agent类定义接口。
     """
-
-    @abstractmethod
-    def exist(self, configuration: Configuration) -> bool:
-        pass
 
     @abstractmethod
     def load(self, configuration: Configuration, instance):

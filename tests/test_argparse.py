@@ -13,6 +13,11 @@ class TestArgparse(unittest.TestCase):
         super().__init__(methodName)
         self.location = 'ArgparseConfig.yml'
 
+        self.parser = argparse.ArgumentParser(description="Test without default value")
+        self.parser.add_argument("--default_value", default=40, type=int)
+        self.parser.add_argument("--arg1", type=int)
+        self.parser.add_argument("--arg2", type=int)
+
     def tearDown(self):
         # 这个方法将在每个测试方法结束后运行
         # 使用os.remove删除在测试中创建的文件
@@ -36,37 +41,27 @@ class TestArgparse(unittest.TestCase):
         self.assertTrue(os.path.exists(self.location))
         with open(self.location, encoding='utf-8') as yaml_file:
             data = yaml.load(yaml_file)
-        self.assertEqual(data['arg1'], 10)
-        # 配置文件保存的是默认值 而非传入值。
-        self.assertEqual(data['arg2'], 20)
+        self.assertEqual(data.arg1, 10)
+        self.assertEqual(data.arg2, 30)
 
     def test_without_default_value(self):
-        parser = argparse.ArgumentParser(description="Test without default value")
-        parser.add_argument("--default_value", default=40, type=int)
-        parser.add_argument("--arg1", type=int)
-        parser.add_argument("--arg2", type=int)
-        ArgsClass = ConfRoot().from_argparse(parser)
+        ArgsClass = ConfRoot().from_argparse(self.parser)
 
-        args_namespace = parser.parse_args(['--arg2', '30'])
+        args_namespace = self.parser.parse_args(['--arg2', '30'])
         args_dataclass = ArgsClass(**vars(args_namespace))
 
         self.assertIsNone(args_dataclass.arg1)
         self.assertEqual(args_dataclass.arg2, 30)
         self.assertEqual(args_dataclass.default_value, 40)
 
-        # 注意，因为dataclass中non-default的定义需在default的变量前，所以在ArgsClass的定义中会对他们进行排序。
-        args_dataclass2 = ArgsClass(12, 13)
-        self.assertEqual(args_dataclass2.default_value, 40)
-        self.assertEqual(args_dataclass2.arg1, 12)
-        self.assertEqual(args_dataclass2.arg2, 13)
+    def test_without_default_value2(self):
+        ArgsClass = ConfRoot().from_argparse(self.parser)
 
-        self.assertTrue(os.path.exists(self.location))
-        with open(self.location, encoding='utf-8') as yaml_file:
-            data = yaml.load(yaml_file)
-        # 配置文件中不会保存没有默认参数的值。
-        self.assertFalse(hasattr(data, 'arg1'))
-        self.assertFalse(hasattr(data, 'arg2'))
+        # 注意，因为dataclass中non-default的定义需在default的变量前，所以在ArgsClass的定义中会对他们进行排序。
+        args_dataclass = ArgsClass(12, 13)
         self.assertEqual(args_dataclass.default_value, 40)
+        self.assertEqual(args_dataclass.arg1, 12)
+        self.assertEqual(args_dataclass.arg2, 13)
 
     def test_action(self):
         parser = argparse.ArgumentParser(description="Test action")

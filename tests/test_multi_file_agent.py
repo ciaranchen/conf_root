@@ -10,7 +10,10 @@ class TestYamlAgent(unittest.TestCase):
         super().__init__(methodName)
         self.agent = YamlAgent
         self.location = 'settings' + self.agent.default_extension
-        self.test_load_content = "database_host: 127.0.0.1\ndatabase_port: 5432"
+        self.test_load_content = """!AppConfig
+database_host: 127.0.0.1
+database_port: 5432
+"""
 
     def tearDown(self):
         # 这个方法将在每个测试方法结束后运行
@@ -40,8 +43,7 @@ class TestYamlAgent(unittest.TestCase):
             content = file.read()
         self.assertTrue('localhost' in content)
         self.assertTrue('5432' in content)
-        # admin 因为非默认配置，不在配置文件中。
-        self.assertFalse('admin' in content)
+        self.assertTrue('admin' in content)
 
     def test_load(self):
         content = self.test_load_content

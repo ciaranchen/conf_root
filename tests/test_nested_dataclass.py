@@ -47,16 +47,16 @@ class TestNestedDataclass(unittest.TestCase):
             content = file.read()
         self.assertTrue('nest_config1' in content)
         self.assertTrue('nest_config2' in content)
-        # defined 因为非默认配置，不在配置文件中。
-        self.assertFalse('defined1' in content)
-        self.assertFalse('defined2' in content)
+        self.assertTrue('defined1' in content)
+        self.assertTrue('defined2' in content)
 
     def test_load(self):
-        content = """nc_default:
-    config1: default_load1
-nc_defined:
-    config1: load1
-    config2: load2"""
+        content = """!AppConfig
+nc_default: !NestedConfig
+  config1: default_load1
+nc_defined: !NestedConfig
+  config1: load1
+  config2: load2"""
 
         # 将处理后的内容写回文件（可以先备份原文件）
         with open(self.location, 'w') as file:
