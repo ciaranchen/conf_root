@@ -2,7 +2,8 @@ import os
 import unittest
 from typing import List
 
-from conf_root import ConfRoot, config_field
+from conf_root import ConfRoot
+from dataclasses import field
 
 
 class TestConfigurationField(unittest.TestCase):
@@ -20,7 +21,7 @@ class TestConfigurationField(unittest.TestCase):
     def test_default_factory(self):
         @ConfRoot(agent_class=None).config
         class AppConfig:
-            name: list = config_field(default_factory=list)
+            name: list = field(default_factory=list)
 
         app_config = AppConfig()
         self.assertTrue(isinstance(app_config.name, list))
@@ -29,8 +30,8 @@ class TestConfigurationField(unittest.TestCase):
     def test_serialize(self):
         @ConfRoot().config(self.location, dynamic=True)
         class AppConfig:
-            name: str = config_field(default='abc', serialize=lambda x: 'random_name',
-                                     deserialize=lambda x: 'cde')
+            name: str = field(default='abc', metadata={'serialize': lambda x: 'random_name',
+                                                       'deserialize': lambda x: 'cde'})
 
         app_config = AppConfig()
         self.assertEqual(app_config.name, 'abc')
@@ -44,9 +45,10 @@ class TestConfigurationField(unittest.TestCase):
     def test_serialize_with_list(self):
         @ConfRoot().config(self.location, dynamic=True)
         class AppConfig:
-            user_list: List = config_field(default_factory=list,
-                                           serialize=lambda xs: ','.join([x.lower() for x in xs]),
-                                           deserialize=lambda s: [x.upper() for x in s.split(',')])
+            user_list: List = field(default_factory=list, metadata={
+                'serialize': lambda xs: ','.join([x.lower() for x in xs]),
+                'deserialize': lambda s: [x.upper() for x in s.split(',')]
+            })
 
         app_config = AppConfig(['Tom', 'Jerry'])
         self.assertEqual(len(app_config.user_list), 2)

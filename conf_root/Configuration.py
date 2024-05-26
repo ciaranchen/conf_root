@@ -1,6 +1,6 @@
 import logging
-from dataclasses import MISSING, fields as dataclasses_fields, Field as DataclassField, dataclass
-from typing import Any, Dict, Optional, Callable
+from dataclasses import MISSING, fields as dataclasses_fields, dataclass
+from typing import Any, Dict, Optional
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     datefmt='%m-%d %H:%M:%S')
@@ -9,26 +9,6 @@ logger = logging.getLogger(__name__)
 
 def is_config_class(cls_or_instance):
     return getattr(cls_or_instance, '__CONF_ROOT__', None) is not None
-
-
-class ConfigurationField(DataclassField):
-    def __init__(self, default, default_factory, init, repr, hash, compare, metadata,
-                 serialize: Callable = MISSING, deserialize: Callable = MISSING):
-        super().__init__(default, default_factory, init, repr, hash, compare, metadata)
-        self.serialize = serialize
-        self.deserialize = deserialize
-
-
-def config_field(*, default=MISSING, default_factory=MISSING, init=True, repr=True,
-                 hash=None, compare=True, metadata=None,
-                 serialize: Callable = MISSING, deserialize: Callable = MISSING):
-    """
-    Copy from dataclass field
-    """
-    if default is not MISSING and default_factory is not MISSING:
-        raise ValueError('cannot specify both default and default_factory')
-    return ConfigurationField(default, default_factory, init, repr, hash, compare,
-                              metadata, serialize=serialize, deserialize=deserialize)
 
 
 @dataclass
@@ -49,7 +29,7 @@ class Configuration:
         res = {}
         for field in dataclasses_fields(instance):
             default = Configuration.field_default(field)
-            if (serialize_func := getattr(field, 'serialize', MISSING)) != MISSING:
+            if 'serialize' in field.metadata and (serialize_func := field.metadata['serialize']) is not None:
                 res[field.name] = serialize_func(default)
                 continue
             if default is not None:
@@ -67,7 +47,7 @@ class Configuration:
             for field in dataclasses_fields(obj):
                 value = getattr(obj, field.name)
                 # 尝试获取serialize函数并调用之。
-                if (serialize_func := getattr(field, 'serialize', MISSING)) != MISSING:
+                if 'serialize' in field.metadata and (serialize_func := field.metadata['serialize']) is not None:
                     value = serialize_func(value)
                     res[field.name] = value
                     # 在进行用户自定义 serialize之后，不再进入递归。
@@ -83,7 +63,7 @@ class Configuration:
             for field in dataclasses_fields(cls):
                 value = data.get(field.name, None)
                 # 在进行用户自定义 deserialize 之后，不再进入递归流程。
-                if (deserialize_func := getattr(field, 'deserialize', MISSING)) != MISSING:
+                if 'deserialize' in field.metadata and (deserialize_func := field.metadata['deserialize']) is not None:
                     value = deserialize_func(value)
                     kwargs[field.name] = value
                     continue
@@ -101,7 +81,7 @@ class Configuration:
             # 从字典中获取值，如果不存在则跳过
             if (value := data.get(field.name, None)) is not None:
                 # 在进行用户自定义 deserialize 之后，不再进入递归流程。
-                if (deserialize_func := getattr(field, 'deserialize', MISSING)) != MISSING:
+                if 'deserialize' in field.metadata and (deserialize_func := field.metadata['deserialize']) is not None:
                     value = deserialize_func(value)
                 else:
                     value = Configuration.recursive_data2obj(field.type, value)
