@@ -1,5 +1,7 @@
+import os
 import re
 from abc import abstractmethod
+from functools import cached_property
 from pathlib import Path
 from typing import Any, Dict
 import logging
@@ -11,31 +13,58 @@ logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(leve
 logger = logging.getLogger(__name__)
 
 
-class BasicAgent:
-    """
-    类中的函数主要是处理递归问题。
-    """
-    default_extension: str = 'undefined'
+class MultiFileAgent:
+    default_extension: str = '.undefined'
 
     def __init__(self, location):
         self.path = Path(location)
         self.path.mkdir(parents=True, exist_ok=True)
 
     def get_configuration_location(self, configuration: Configuration) -> Path:
-        invalid_chars_pattern = r'[\\/:*?"<>|]'
-        filename = re.sub(invalid_chars_pattern, '_', configuration.name)
-        if not filename.endswith(f'.{self.default_extension}'):
-            filename += f'.{self.default_extension}'
-        return self.path.joinpath(filename)
+        filename = self.path.joinpath(configuration.filename)
+        return self.ensure_suffix(filename)
+
+    def ensure_suffix(self, path):
+        # 检查文件路径是否已经有后缀名
+        _, ext = os.path.splitext(path)
+        # 如果后缀名不为空并且不是我们要添加的后缀名（考虑大小写）
+        if ext.lower() != self.default_extension.lower():
+            # 如果没有后缀名或者后缀名不同，则添加后缀名
+            # 注意：这里使用os.path.basename来获取文件名，然后再拼接新的文件名和目录
+            directory, filename = os.path.split(path)
+            new_filename = filename + self.default_extension
+            new_path = os.path.join(directory, new_filename)
+            return new_path
+        else:
+            # 如果后缀名已经存在或者文件路径没有后缀名（即ext为空），则直接返回原路径
+            return path
+
+
+class OneFileAgent(MultiFileAgent):
+    default_extension: str = '.undefined'
+
+    def __init__(self, location):
+        parent_directory = Path(location).parent
+        super().__init__(parent_directory)
+        self.location = self.ensure_suffix(Path(location))
+
+    def get_configuration_location(self, configuration: Configuration) -> Path:
+        return self.location
+
+
+class BasicAgent(MultiFileAgent):
+    """
+    此抽象类为所有Agent类定义接口。
+    """
 
     @abstractmethod
     def exist(self, configuration: Configuration) -> bool:
         pass
 
     @abstractmethod
-    def load(self, configuration: Configuration) -> Dict[str, Any]:
+    def load(self, configuration: Configuration, instance):
         logger.debug(f'load from: {self.get_configuration_location(configuration)}')
 
     @abstractmethod
-    def save(self, configuration: Configuration, data: Dict[str, Any]) -> None:
+    def save(self, configuration: Configuration, instance):
         logger.debug(f'save to: {self.get_configuration_location(configuration)}')

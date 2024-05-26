@@ -47,7 +47,7 @@ class ConfRoot:
                     return self.agent.save(configuration, data)
 
                 def load(_self):
-                    data = self.agent.load(configuration)
+                    data = self.agent.load(configuration, _self)
                     configuration.data2obj(_self, data)
 
                 cls.save = save
@@ -70,14 +70,14 @@ class ConfRoot:
         if self.persist:
             if self.agent.exist(configuration):
                 # 如果已存在，读取和实例化
-                data = self.agent.load(configuration)
+                data = self.agent.load(configuration, instance)
                 configuration.data2obj(instance, data)
             else:
                 # 若文件不存在，根据默认值创建
                 data = configuration.defaults(instance)
                 self.agent.save(configuration, data)
 
-    def from_argparse(self, parser: argparse.ArgumentParser, cls_name: str = 'argparse'):
+    def from_argparse(self, parser: argparse.ArgumentParser, cls_name: str = 'ArgparseConfig'):
         def get_default(action):
             if isinstance(action, argparse._StoreConstAction):
                 return action.const
@@ -123,4 +123,4 @@ class ConfRoot:
         fields = sorted(fields, key=lambda x: x[2] == MISSING, reverse=True)
 
         cls = make_dataclass(cls_name.replace(f'.{self.agent.default_extension}', ''), fields)
-        return self.config(cls_name)(cls)
+        return self.config(cls)

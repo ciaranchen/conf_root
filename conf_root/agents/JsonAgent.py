@@ -1,18 +1,18 @@
 import os
 
 from conf_root.Configuration import Configuration
-from conf_root.agents.BasicAgent import BasicAgent
+from conf_root.agents.BasicAgent import BasicAgent, MultiFileAgent
 import json
 
 
-class JsonAgent(BasicAgent):
-    default_extension = 'json'
+class JsonAgent(BasicAgent, MultiFileAgent):
+    default_extension = '.json'
 
     def exist(self, configuration: Configuration) -> bool:
         return self.get_configuration_location(configuration).exists()
 
-    def load(self, configuration):
-        super().load(configuration)
+    def load(self, configuration, instance):
+        super().load(configuration, instance)
         location = self.get_configuration_location(configuration)
         with open(location, encoding='utf-8') as file:
             data = json.load(file)

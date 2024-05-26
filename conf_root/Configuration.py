@@ -1,4 +1,5 @@
 import logging
+import re
 from dataclasses import MISSING, fields as dataclasses_fields, dataclass
 from typing import Any, Dict, Optional
 
@@ -15,6 +16,16 @@ def is_config_class(cls_or_instance):
 class Configuration:
     name: str
     cls: Any
+
+    @property
+    def filename(self):
+        invalid_chars_pattern = r'[\\/:*?"<>|]'
+        filename = re.sub(invalid_chars_pattern, '_', self.name)
+        return filename
+
+    @property
+    def fields(self):
+        return dataclasses_fields(self.cls)
 
     @staticmethod
     def field_default(field):

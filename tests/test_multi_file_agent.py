@@ -9,7 +9,7 @@ class TestYamlAgent(unittest.TestCase):
     def __init__(self, methodName="runTest"):
         super().__init__(methodName)
         self.agent = YamlAgent
-        self.location = 'settings.' + self.agent.default_extension
+        self.location = 'settings' + self.agent.default_extension
         self.test_load_content = "database_host: 127.0.0.1\ndatabase_port: 5432"
 
     def tearDown(self):
@@ -87,5 +87,5 @@ class TestJsonConfig(TestYamlAgent):
     def __init__(self, methodName="runTest"):
         super().__init__(methodName)
         self.agent = JsonAgent
-        self.location = 'settings.' + self.agent.default_extension
+        self.location = 'settings' + self.agent.default_extension
         self.test_load_content = """{"database_host": "127.0.0.1", "database_port": 5432}"""

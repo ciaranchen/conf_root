@@ -4,8 +4,7 @@ import os
 import unittest
 from dataclasses import dataclass
 
-from conf_root import ConfRoot
-from conf_root.agents.SingleFileYamlAgent import SingleFileYamlAgent
+from conf_root import ConfRoot, SingleFileYamlAgent
 from tests.utils import replace_text
 
 

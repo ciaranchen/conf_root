@@ -11,7 +11,7 @@ yaml = YAML()
 class TestArgparse(unittest.TestCase):
     def __init__(self, methodName="runTest"):
         super().__init__(methodName)
-        self.location = 'argparse.yml'
+        self.location = 'ArgparseConfig.yml'
 
     def tearDown(self):
         # 这个方法将在每个测试方法结束后运行
