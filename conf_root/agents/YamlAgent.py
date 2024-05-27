@@ -1,6 +1,6 @@
 import dataclasses
 import os.path
-from ruamel.yaml import YAML
+from ruamel.yaml import YAML, CommentedMap
 
 from conf_root.Configuration import Configuration, is_config_class
 from conf_root.agents.BasicAgent import BasicAgent, OneFileAgent
@@ -11,7 +11,7 @@ def make_serializer(cls):
     name = cls.__CONF_ROOT__.name
 
     def config_class_representer(dumper, data):
-        data_dict = {}
+        data_dict = CommentedMap()
         for field in dataclasses.fields(data):
             value = getattr(data, field.name)
             if 'serialize' in field.metadata:
@@ -19,6 +19,8 @@ def make_serializer(cls):
                 data_dict[field.name] = serialize_func(value)
             else:
                 data_dict[field.name] = value
+            if 'comment' in field.metadata:
+                data_dict.yaml_add_eol_comment(field.metadata['comment'], key=field.name)
         return dumper.represent_mapping(f'!{name}', data_dict)
 
     def config_class_constructor(loader, node):

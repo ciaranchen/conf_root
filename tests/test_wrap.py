@@ -69,7 +69,3 @@ class TestWrap(unittest.TestCase):
 
         conf = AppConfig()
         self.assertTrue(os.path.exists(self.location))
-
-
-if __name__ == '__main__':
-    unittest.main()

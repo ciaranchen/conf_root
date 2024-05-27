@@ -1,5 +1,5 @@
 import argparse
-from dataclasses import make_dataclass, is_dataclass, MISSING, dataclass
+from dataclasses import make_dataclass, is_dataclass, MISSING, dataclass, field as dataclass_field
 from pathlib import Path
 from typing import Optional, Type
 import logging
@@ -75,11 +75,9 @@ class ConfRoot:
 
     def from_argparse(self, parser: argparse.ArgumentParser, cls_name: str = 'ArgparseConfig'):
         def get_default(action):
-            if isinstance(action, argparse._StoreConstAction):
-                return action.const
-            if action.default:
+            if action.default and action.default != argparse.SUPPRESS:
                 return action.default
-            if action.const:
+            if action.const and isinstance(action, argparse._StoreConstAction):
                 return action.const
             return MISSING
 
@@ -90,6 +88,10 @@ class ConfRoot:
             if default:
                 return type(default)
 
+        def default_field(action):
+            metadata = {} if action.help is None else {'comment': action.help}
+            return dataclass_field(default=get_default(action), metadata=metadata)
+
         fields = []
         for action in parser._actions:
             name = action.dest
@@ -99,24 +101,20 @@ class ConfRoot:
                     or isinstance(action, argparse._StoreFalseAction)
                     or isinstance(action, argparse._StoreTrueAction)
                     or isinstance(action, argparse._StoreConstAction)):
+                logger.warning(f'Skiped Argparse: {action.dest} action {action.__class__.__name__}')
                 # 暂不考虑不支持的action
                 continue
             if action.nargs not in [None, 0, 1]:
+                logger.warning(f'Skiped Argparse: {action.dest} nargs {action.nargs}')
                 # 暂不考虑多参数的情况
                 continue
             # TODO: handle other Action.
 
-            if isinstance(action, argparse._StoreFalseAction):
-                field = (name, bool, False)
-            elif isinstance(action, argparse._StoreTrueAction):
-                field = (name, bool, True)
-            else:
-                default = get_default(action)
-                _type = get_type(action)
-                field = (name, _type, default)
+            _type = get_type(action)
+            field = (name, _type, default_field(action))
             fields.append(field)
 
-        fields = sorted(fields, key=lambda x: x[2] == MISSING, reverse=True)
+        fields = sorted(fields, key=lambda x: x[2].default == MISSING, reverse=True)
 
         cls = make_dataclass(cls_name.replace(f'.{self.agent.default_extension}', ''), fields)
         return self.config(cls)

@@ -73,5 +73,3 @@ class TestSingleFileYamlAgent(unittest.TestCase):
         conf2 = self.conf2()
         self.assertEqual(conf2.one_thing, 43)
         self.assertEqual(conf2.another_thing, 1024)
-
-

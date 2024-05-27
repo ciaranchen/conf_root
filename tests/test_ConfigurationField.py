@@ -40,7 +40,6 @@ class TestConfigurationField(unittest.TestCase):
             content = file.read()
         self.assertTrue('random_name' in content)
         app_config.load()
-        print(app_config)
         self.assertEqual(app_config.name, 'cde')
 
     def test_serialize_with_list(self):
@@ -61,6 +60,13 @@ class TestConfigurationField(unittest.TestCase):
         self.assertEqual(app_config.user_list[0], 'TOM')
         self.assertEqual(app_config.user_list[1], 'JERRY')
 
+    def test_comment(self):
+        @ConfRoot().config(self.location)
+        class AppConfig:
+            name: str = field(metadata={'comment': 'Here is a comment.'})
 
-if __name__ == '__main__':
-    unittest.main()
+        app_config = AppConfig('123')
+        self.assertTrue(os.path.exists(self.location))
+        with open(self.location, 'r') as file:
+            content = file.read()
+        self.assertTrue('Here is a comment.' in content)
