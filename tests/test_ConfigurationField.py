@@ -27,38 +27,39 @@ class TestConfigurationField(unittest.TestCase):
         self.assertTrue(isinstance(app_config.name, list))
         self.assertEqual(len(app_config.name), 0)
 
-    # def test_serialize(self):
-    #     @ConfRoot().config(self.location, dynamic=True)
-    #     class AppConfig:
-    #         name: str = field(default='abc', metadata={'serialize': lambda x: 'random_name',
-    #                                                    'deserialize': lambda x: 'cde'})
-    #
-    #     app_config = AppConfig()
-    #     self.assertEqual(app_config.name, 'abc')
-    #     self.assertTrue(os.path.exists(self.location))
-    #     with open(self.location, 'r') as file:
-    #         content = file.read()
-    #     self.assertTrue('random_name' in content)
-    #     app_config.load()
-    #     self.assertEqual(app_config.name, 'cde')
-    #
-    # def test_serialize_with_list(self):
-    #     @ConfRoot().config(self.location, dynamic=True)
-    #     class AppConfig:
-    #         user_list: List = field(default_factory=list, metadata={
-    #             'serialize': lambda xs: ','.join([x.lower() for x in xs]),
-    #             'deserialize': lambda s: [x.upper() for x in s.split(',')]
-    #         })
-    #
-    #     app_config = AppConfig(['Tom', 'Jerry'])
-    #     self.assertEqual(len(app_config.user_list), 2)
-    #     self.assertTrue(os.path.exists(self.location))
-    #     with open(self.location, 'r') as file:
-    #         content = file.read()
-    #     self.assertTrue('tom,jerry' in content)
-    #     app_config.load()
-    #     self.assertEqual(app_config.user_list[0], 'TOM')
-    #     self.assertEqual(app_config.user_list[1], 'JERRY')
+    def test_serialize(self):
+        @ConfRoot().config(self.location, dynamic=True)
+        class AppConfig:
+            name: str = field(default='abc', metadata={'serialize': lambda x: 'random_name',
+                                                       'deserialize': lambda x: 'cde'})
+
+        app_config = AppConfig()
+        self.assertEqual(app_config.name, 'abc')
+        self.assertTrue(os.path.exists(self.location))
+        with open(self.location, 'r') as file:
+            content = file.read()
+        self.assertTrue('random_name' in content)
+        app_config.load()
+        print(app_config)
+        self.assertEqual(app_config.name, 'cde')
+
+    def test_serialize_with_list(self):
+        @ConfRoot().config(self.location, dynamic=True)
+        class AppConfig:
+            user_list: List = field(default_factory=list, metadata={
+                'serialize': lambda xs: ','.join([x.lower() for x in xs]),
+                'deserialize': lambda s: [x.upper() for x in s.split(',')]
+            })
+
+        app_config = AppConfig(['Tom', 'Jerry'])
+        self.assertEqual(len(app_config.user_list), 2)
+        self.assertTrue(os.path.exists(self.location))
+        with open(self.location, 'r') as file:
+            content = file.read()
+        self.assertTrue('tom,jerry' in content)
+        app_config.load()
+        self.assertEqual(app_config.user_list[0], 'TOM')
+        self.assertEqual(app_config.user_list[1], 'JERRY')
 
 
 if __name__ == '__main__':

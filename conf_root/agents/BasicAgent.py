@@ -66,8 +66,8 @@ class BasicAgent(MultiFileAgent):
 
     @abstractmethod
     def load(self, configuration: Configuration, instance):
-        logger.debug(f'load from: {self.get_configuration_location(configuration)}')
+        logger.debug(f'load {instance.__class__.__qualname__} from: {self.get_configuration_location(configuration)}')
 
     @abstractmethod
     def save(self, configuration: Configuration, instance):
-        logger.debug(f'save to: {self.get_configuration_location(configuration)}')
+        logger.debug(f'save {instance.__class__.__qualname__} to: {self.get_configuration_location(configuration)}')

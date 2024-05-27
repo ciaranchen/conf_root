@@ -1,11 +1,8 @@
 import argparse
 import os
 import unittest
-from ruamel.yaml import YAML
 
 from conf_root import ConfRoot
-
-yaml = YAML()
 
 
 class TestArgparse(unittest.TestCase):
@@ -40,9 +37,9 @@ class TestArgparse(unittest.TestCase):
 
         self.assertTrue(os.path.exists(self.location))
         with open(self.location, encoding='utf-8') as yaml_file:
-            data = yaml.load(yaml_file)
-        self.assertEqual(data.arg1, 10)
-        self.assertEqual(data.arg2, 30)
+            content = yaml_file.read()
+        self.assertTrue('arg1: 10' in content)
+        self.assertTrue('arg2: 30' in content)
 
     def test_without_default_value(self):
         ArgsClass = ConfRoot().from_argparse(self.parser)

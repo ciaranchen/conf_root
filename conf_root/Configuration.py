@@ -1,6 +1,6 @@
 import logging
 import re
-from dataclasses import fields as dataclasses_fields, dataclass
+from dataclasses import fields as dataclasses_fields, dataclass, is_dataclass
 from typing import Any
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -24,18 +24,13 @@ class Configuration:
         return filename
 
     @property
-    def configuration_classes(self):
-        def _recursive_config_class(cls):
-            if is_config_class(cls):
-                res = []
+    def all_dataclass(self):
+        def _recursive_dataclass(cls):
+            res = []
+            if is_dataclass(cls):
                 for field in dataclasses_fields(cls):
-                    res.extend(_recursive_config_class(field.type))
+                    res.extend(_recursive_dataclass(field.type))
                     res.append(cls)
-                return res
-            else:
-                return []
+            return res
 
-        return _recursive_config_class(self.cls)
-
-    def yaml_register_classes(self):
-        return self.configuration_classes
+        return _recursive_dataclass(self.cls)

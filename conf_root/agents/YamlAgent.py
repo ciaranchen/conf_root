@@ -1,28 +1,38 @@
 import dataclasses
 import os.path
-from ruamel.yaml import YAML, SafeRepresenter
+from ruamel.yaml import YAML
 
-from conf_root.Configuration import Configuration
+from conf_root.Configuration import Configuration, is_config_class
 from conf_root.agents.BasicAgent import BasicAgent, OneFileAgent
+from conf_root.agents.utils import data2obj
 
 
-class MyDataRepresenter(SafeRepresenter):
-    def represent_dataclass(self, data):
-        # 自定义序列化逻辑
-        mapping = {}
+def make_serializer(cls):
+    name = cls.__CONF_ROOT__.name
+
+    def config_class_representer(dumper, data):
+        data_dict = {}
         for field in dataclasses.fields(data):
+            value = getattr(data, field.name)
             if 'serialize' in field.metadata:
-                # 特殊处理具有自定义元数据的字段
                 serialize_func = field.metadata['serialize']
-                field_value = getattr(data, field.name)
-                value = self.represent_scalar('tag: yaml.org,2002:str', serialize_func(field_value))
-                # value = self.represent_custom(getattr(data, field.name), field.metadata['serialize_as'])
+                data_dict[field.name] = serialize_func(value)
             else:
-                # 默认序列化其他字段
-                value = self.represent_data(getattr(data, field.name))
-            mapping[field.name] = value
-        # 返回映射的表示
-        return self.represent_mapping(None, mapping)
+                data_dict[field.name] = value
+        return dumper.represent_mapping(f'!{name}', data_dict)
+
+    def config_class_constructor(loader, node):
+        data_dict = loader.construct_yaml_map(node)
+        data_dict = list(data_dict)[0]
+        # 遍历dataclass的字段，应用自定义反序列化逻辑
+        for field in dataclasses.fields(cls):
+            if 'deserialize' in field.metadata:
+                deserialize_func = field.metadata['deserialize']
+                data_dict[field.name] = deserialize_func(data_dict[field.name])
+        # return cls(**data_dict)
+        return data_dict
+
+    return config_class_representer, config_class_constructor
 
 
 class YamlAgent(BasicAgent):
@@ -34,9 +44,15 @@ class YamlAgent(BasicAgent):
         yaml.preserve_quotes = True
         yaml.indent(mapping=2, sequence=4, offset=2)
 
-        classes = configuration.yaml_register_classes()
-        for cls in classes:
-            yaml.register_class(cls)
+        for cls in configuration.all_dataclass:
+            if is_config_class(cls):
+                # 'tag:yaml.org,2002:map'
+                name = cls.__CONF_ROOT__.name
+                representer, constructor = make_serializer(cls)
+                yaml.representer.add_representer(cls, representer)
+                yaml.constructor.add_constructor(f'!{name}', constructor)
+            else:  # 就是普通的dataclass
+                yaml.register_class(cls)
         return yaml
 
     def load(self, configuration, instance):
@@ -48,8 +64,7 @@ class YamlAgent(BasicAgent):
             # 将dict展开为对象。
             data = self.get_yaml(configuration).load(file)
         # 覆盖原instance中的变量:
-        for k, v in data.__dict__.items():
-            setattr(instance, k, v)
+        data2obj(instance, data)
         return instance
 
     def save(self, configuration, instance):
@@ -83,7 +98,7 @@ class SingleFileYamlAgent(YamlAgent, OneFileAgent):
         res = self._load(configuration)
         data = res[configuration.name]
         # 覆盖原instance中的变量:
-        for k, v in data.__dict__.items():
+        for k, v in data.items():
             setattr(instance, k, v)
         return instance
 
