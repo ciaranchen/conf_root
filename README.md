@@ -31,7 +31,7 @@ class AppConfig:
 
 
 # 在类实例化时，检测是否存在配置文件(文件名为name+后缀)。
-# 如不存在则按照默认值新建文件（或在文件中添加字段）。
+# 如不存在则新建文件。
 # 如存在配置文件，则加载文件中的配置。
 app_config = AppConfig()
 ```
@@ -55,6 +55,15 @@ app_config = AppConfig()
     - 对于多文件存储，name为文件名。指定时可以带上agent相应的后缀名。
     - 对于单文件存储，name为在文件中的section名。
 - dynamic 为是否允许动态加载与变更配置文件。默认为False。如果设定为True，将会为类添加`save` 和 `load`方法来动态写入或读取配置文件。
+
+### 对field的拓展说明
+
+dataclass中的field可以通过metadata进行拓展。
+
+- comment: 注释。仅在Yaml的输出格式中有效。为导出文件中当前字段的行添加行内注释。
+- serialize: 自定义序列化函数。接受序列化字段的值，返回序列化的文本。
+- deserialize: 自定义反序列化函数。接受序列化后的文本，返回该字段应有的值。
+- validators: 函数的列表。在反序列化时，对获得的值依次校验；如不符合要求抛出 ValidateException.
 
 ## 解析 Argparse
 
@@ -101,7 +110,7 @@ from_argparse 目前仅支持常见的Argparse动作。这不意味着有不支�
 嵌套时可以只指定agent=None来避免产生存储的文件。
 
 ```python
-from conf_root import ConfRoot, JsonAgent, config_field
+from conf_root import ConfRoot, JsonAgent
 from dataclasses import field
 from typing import List
 
@@ -121,8 +130,10 @@ class AppConfig:
     # 可嵌套定义, 支持使用dataclasses的field。
     user_config: DataBaseUserConfig = field(default_factory=DataBaseUserConfig)
     # 使用 config_field，支持dataclasses.field 的所有参数；同时可以自定义serialize方式与deserialize方法
-    user_list: List = config_field(default_factory=list, serialize=lambda xs: ','.join(xs),
-                                   deserialize=lambda s: s.split(','))
+    user_list: List = field(default_factory=list, metadata={
+        'serialize': lambda xs: ','.join([x.lower() for x in xs]),
+        'deserialize': lambda s: [x.upper() for x in s.split(',')]
+    })
 
 
 app_config = AppConfig()
