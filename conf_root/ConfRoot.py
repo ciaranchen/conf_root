@@ -1,7 +1,7 @@
 import argparse
 from dataclasses import make_dataclass, is_dataclass, MISSING, dataclass, field as dataclass_field
 from pathlib import Path
-from typing import Optional, Type
+from typing import Optional, Type, List
 import logging
 
 from conf_root.Configuration import Configuration
@@ -79,40 +79,54 @@ class ConfRoot:
                 return action.default
             if action.const and isinstance(action, argparse._StoreConstAction):
                 return action.const
-            return MISSING
+            # 如果是Required的话，那么传入的参数中必定有它，所以不必有default。
+            return MISSING if action.required else None  # 实在没有default的话，就先给None了
 
         def get_type(action):
             if action.type:
                 return action.type
+            if action.nargs and action.nargs != '?':
+                return List
+            if (isinstance(action, argparse._AppendAction) or
+                    isinstance(action, argparse._AppendConstAction) or isinstance(action, argparse._ExtendAction)):
+                return List
             default = get_default(action)
             if default:
                 return type(default)
 
         def default_field(action):
-            metadata = {} if action.help is None else {'comment': action.help}
+            metadata = {'validators': []}
+            if action.help:
+                metadata['comment'] = action.help
+            # validators
+            if action.choices:
+                metadata['validators'].append(lambda x: x in action.choices)
+            if action.nargs:
+                if isinstance(action.nargs, int):
+                    metadata['validators'].append(lambda x: len(x) == action.nargs)
+                if action.nargs == '+':
+                    metadata['validators'].append(lambda x: len(x) > 0)
             return dataclass_field(default=get_default(action), metadata=metadata)
 
         fields = []
         for action in parser._actions:
             name = action.dest
-            if name == 'help':
+            if isinstance(action, argparse._HelpAction) or isinstance(action, argparse._VersionAction):
                 continue
-            if not (isinstance(action, argparse._StoreAction)
-                    or isinstance(action, argparse._StoreFalseAction)
-                    or isinstance(action, argparse._StoreTrueAction)
-                    or isinstance(action, argparse._StoreConstAction)):
+            _SUPPORT_ACTIONS = [
+                argparse._AppendAction, argparse._AppendConstAction, argparse._CountAction, argparse._ExtendAction,
+                argparse._StoreAction, argparse._StoreConstAction, argparse._StoreFalseAction, argparse._StoreTrueAction
+            ]
+            if not any([isinstance(action, sa) for sa in _SUPPORT_ACTIONS]):
                 logger.warning(f'Skiped Argparse: {action.dest} action {action.__class__.__name__}')
                 # 暂不考虑不支持的action
-                continue
-            if action.nargs not in [None, 0, 1]:
-                logger.warning(f'Skiped Argparse: {action.dest} nargs {action.nargs}')
-                # 暂不考虑多参数的情况
                 continue
             # TODO: handle other Action.
 
             _type = get_type(action)
             field = (name, _type, default_field(action))
             fields.append(field)
+            print(field)
 
         fields = sorted(fields, key=lambda x: x[2].default == MISSING, reverse=True)
 

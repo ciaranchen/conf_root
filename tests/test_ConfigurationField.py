@@ -2,8 +2,10 @@ import os
 import unittest
 from typing import List
 
-from conf_root import ConfRoot
+from conf_root import ConfRoot, ValidateException
 from dataclasses import field
+
+from tests.utils import replace_text
 
 
 class TestConfigurationField(unittest.TestCase):
@@ -70,3 +72,17 @@ class TestConfigurationField(unittest.TestCase):
         with open(self.location, 'r') as file:
             content = file.read()
         self.assertTrue('Here is a comment.' in content)
+
+    def test_validators(self):
+        @ConfRoot().config(self.location, dynamic=True)
+        class AppConfig:
+            name: str = field(metadata={'validators': [lambda x: x in ['a', 'b', 'c']]})
+
+        app_config =AppConfig('c')
+        replace_text(self.location, 'c', 'd')
+        try:
+            app_config.load()
+            # 必须在上一句抛出异常
+            self.assertTrue(False)
+        except ValidateException:
+            pass

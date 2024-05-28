@@ -52,10 +52,16 @@ class TestArgparse(unittest.TestCase):
         self.assertEqual(args_dataclass.default_value, 40)
 
     def test_without_default_value2(self):
-        ArgsClass = ConfRoot().from_argparse(self.parser)
+        parser = argparse.ArgumentParser(description="Test without default value")
+        parser.add_argument("--default_value", default=40, type=int)
+        parser.add_argument("--arg1", type=int, required=True)
+        parser.add_argument("--arg2", type=int, required=True)
 
-        # 注意，因为dataclass中non-default的定义需在default的变量前，所以在ArgsClass的定义中会对他们进行排序。
+        ArgsClass = ConfRoot().from_argparse(parser)
+
+        # 注意，因为dataclass中non-default的定义需在default的变量前，所以在ArgsClass的定义中会将required的函数提到最前。
         args_dataclass = ArgsClass(12, 13)
+        # print(args_dataclass)
         self.assertEqual(args_dataclass.default_value, 40)
         self.assertEqual(args_dataclass.arg1, 12)
         self.assertEqual(args_dataclass.arg2, 13)
@@ -69,8 +75,6 @@ class TestArgparse(unittest.TestCase):
         ArgsClass = ConfRoot().from_argparse(parser)
         args_dataclass = ArgsClass()
 
-        self.assertFalse(hasattr(args_dataclass, 'items'))
         self.assertFalse(hasattr(args_dataclass, 'help'))
-        self.assertFalse(hasattr(args_dataclass, 'count'))
         self.assertTrue(args_dataclass.verbose)
         self.assertEqual(args_dataclass.foo, 42)
