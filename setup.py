@@ -5,13 +5,13 @@ with open("README.md", "r", encoding='utf-8') as fh:
 
 setup(
     name="conf_root",  # 包名
-    version="0.4.0",  # 版本号
+    version="0.4.1",  # 版本号
     install_requires=[
         "ruamel.yaml"
     ],
     author="ciaranchen",
     author_email="ciaranchen@qq.com",
-    description="基于dataclass的符合逻辑的配置取用方式。",
+    description="基于dataclass的配置文件取用工具",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/ciaranchen/conf_root",

@@ -93,15 +93,15 @@ class SingleFileYamlAgent(YamlAgent, OneFileAgent):
         if not os.path.exists(self.location):
             return {}
         with open(self.location, 'r') as f:
-            return self.get_yaml(configuration).load(f)
+            data = self.get_yaml(configuration).load(f)
+        return data if data is not None else {}
 
     def load(self, configuration: Configuration, instance):
         BasicAgent.load(self, configuration, instance)
         res = self._load(configuration)
         data = res[configuration.name]
-        # 覆盖原instance中的变量:
-        for k, v in data.items():
-            setattr(instance, k, v)
+        # 覆盖原instance中的变量
+        data2obj(instance, data)
         return instance
 
     def save(self, configuration: Configuration, instance) -> None:

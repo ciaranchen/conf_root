@@ -1,7 +1,7 @@
 [project]
 name = "conf_root"
-version = "0.4.0"
-description = "Default template for PDM package"
+version = "0.4.1"
+description = "基于dataclass的科研配置文件取用工具"
 authors = [
     {name = "ciaranchen", email = "ciaranchen@qq.com"},
 ]
@@ -15,3 +15,8 @@ license = {text = "MIT"}
 
 [tool.pdm]
 distribution = false
+
+[[tool.pdm.source]]
+url = "https://pypi.tuna.tsinghua.edu.cn/simple"
+verify_ssl = true
+name = "pip_conf_index_global"

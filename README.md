@@ -2,7 +2,7 @@
 
 ![PyPI - Version](https://img.shields.io/pypi/v/conf_root)
 
-基于dataclass的符合逻辑的配置文件取用方式。主要想法是在大量进行实验时，参数经常变动而且难以记录。最好有一种方式能在人类能读懂的配置文件中写出所有的参数，这样每次运行的记录都相对完整且易于整理。库的主要功能如下：
+基于dataclass的科研配置文件取用工具。主要想法是在大量进行实验时，参数经常变动而且难以记录。最好有一种方式能在人类能读懂的配置文件中写出所有的参数，这样每次运行的记录都相对完整且易于整理。库的主要功能如下：
 
 1. 为您定义的类生成一个配置文件；并优先使用配置文件中的值作为类中变量的值。
 2. 将某些科研项目中的argparse转换为dataclass，进而生成配置文件；从而可以在配置文件中修改输入。
@@ -67,7 +67,8 @@ dataclass中的field可以通过metadata进行拓展。
 
 ## 解析 Argparse
 
-在科研项目中会出现一大堆parser.argument，仅需添加两行代码就可以将其命令行参数配置转换为配置文件，并在配置文件中剪辑参数。不必重复输入一长串的命令行参数，也不再需要专门的`run.sh`或者`run.bat`。
+在科研项目中会出现一大堆parser.argument，仅需添加两行代码就可以将其命令行参数配置转换为配置文件，并在配置文件中剪辑参数。不必重复输入一长串的命令行参数，也不再需要专门的`run.sh`
+或者`run.bat`。
 
 ```python
 import argparse
@@ -98,11 +99,7 @@ args_dataclass = ArgsClass(**vars(args))
 - paser。需解析的argparse.ArgumentParser。
 - cls_name。这个参数既是产生的dataclass类的类名，也是使用ConfRoot.wrap封装时的name参数。默认值为argparse。
 
-from_argparse 目前仅支持常见的Argparse动作。这不意味着有不支持的命令行参数会导致报错，这些参数将会被忽略跳过。具体限制如下：
-
-1. Argparse 的 action 必须为 'store(即默认值)', 'store_const', 'store_true', 'store_false' 之一。
-2. Argparse 的 nargs 不支持。
-3. Argparse 中 choices 和 required 的限制将会被忽略。
+from_argparse 目前仅支持常见的官方Argparse动作，但是对于自定义的Action来说可能支持有限。这不意味着有不支持的命令行参数会导致报错，这些参数将会被忽略跳过。
 
 ## More Example
 

@@ -30,7 +30,7 @@ class Configuration:
             if is_dataclass(cls):
                 for field in dataclasses_fields(cls):
                     res.extend(_recursive_dataclass(field.type))
-                    res.append(cls)
+                res.append(cls)
             return res
 
         return _recursive_dataclass(self.cls)

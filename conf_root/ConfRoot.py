@@ -126,7 +126,7 @@ class ConfRoot:
             _type = get_type(action)
             field = (name, _type, default_field(action))
             fields.append(field)
-            print(field)
+            # print(field)
 
         fields = sorted(fields, key=lambda x: x[2].default == MISSING, reverse=True)
 
