@@ -18,6 +18,7 @@ def make_handler(forms: Dict[Type, Type]):
             <html>
             <head>
                 <title>ConfRoot Form Index</title>
+                <meta charset="UTF-8" />
             </head>
             <body>
                 <h1>ConfRoot Form Index</h1>
@@ -39,13 +40,14 @@ def make_handler(forms: Dict[Type, Type]):
             <html>
             <head>
                 <title>{{ name }}</title>
+                <meta charset="UTF-8" />
             </head>
             <body>
                 <h1>{{ name }}</h1>
                 <form method="POST" action="{{ action_url }}">
                     {% for field in form %}
                         <p>
-                            {{ field.label }}<br>
+                            {{ field.label }}{% if field.flags.required %}*{% endif %}<br>
                             {{ field(size=20) }}<br>
                             {% for error in field.errors %}
                                 <span style="color: red;">[{{ error }}]</span><br>
@@ -73,7 +75,10 @@ def make_handler(forms: Dict[Type, Type]):
                 name = cls.__name__
                 action_url = name if name.startswith('/') else '/' + name
                 if self.path == action_url:
-                    form = form_class()
+                    # 构造Dataclass
+                    obj = cls()
+                    # TODO: 处理递归的情况。
+                    form = form_class(obj=obj)
                     response = self.render_form(name, form, action_url)
                     self.send_response(200)
                     self.send_header('Content-type', 'text/html')
@@ -95,9 +100,15 @@ def make_handler(forms: Dict[Type, Type]):
                 action_url = name if name.startswith('/') else '/' + name
                 if self.path == action_url:
                     form = form_class(data=post_data)
-                    print(form.data)
                     if form.validate():
                         response = f"Form submitted! Data: {form.data}"
+                        # 写入instance
+                        instance = cls()
+                        for k, v in form.data.items():
+                            setattr(instance, k, v)
+                        print(instance)
+                        configuration = cls.__CONF_ROOT__
+                        configuration.conf_root.agent.save(configuration, instance)
                     else:
                         response = self.render_form(name, form, action_url)
                     self.send_response(200)

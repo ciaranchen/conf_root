@@ -1,5 +1,6 @@
 import os.path
 import unittest
+from dataclasses import field
 
 from conf_root import ConfRoot
 from conf_root.extract_class import extract_classes_from_file
@@ -22,6 +23,7 @@ class Class1:
 @ConfRoot().config
 class Class2:
     name: str = 'name2'
+    name2: Class1 = field(default_factory=Class1)
 
 
 class TestExtractClass(unittest.TestCase):
@@ -44,10 +46,10 @@ class TestExtractClass(unittest.TestCase):
         classes = extract_classes_from_file(__file__)
         # 注意：对于定义在类或函数中的配置类，无法import出来。
         self.assertEqual(len(classes), 2)
-        classes.sort(key=lambda x: x[0])
-        self.assertEqual(classes[0][0], 'Class1')
-        self.assertEqual(classes[1][0], 'Class2')
-        c1 = classes[0][1]()
+        classes.sort(key=lambda x: x.__name__)
+        self.assertEqual(classes[0].__name__, 'Class1')
+        self.assertEqual(classes[1].__name__, 'Class2')
+        c1 = classes[0]()
         self.assertEqual(c1.name, 'name1')
-        c2 = classes[1][1]()
+        c2 = classes[1]()
         self.assertEqual(c2.name, 'name2')

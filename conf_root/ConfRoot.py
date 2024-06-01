@@ -29,7 +29,7 @@ class ConfRoot:
             if name is None:
                 name = cls.__qualname__.replace('<locals>.', '')
 
-            configuration = Configuration(name, cls)
+            configuration = Configuration(name, cls, self)
             setattr(cls, '__CONF_ROOT__', configuration)
 
             # 覆盖其 __init__ 函数

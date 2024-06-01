@@ -16,6 +16,7 @@ def is_config_class(cls_or_instance):
 class Configuration:
     name: str
     cls: Any
+    conf_root: Any
 
     @property
     def filename(self):
