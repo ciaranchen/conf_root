@@ -1,10 +1,12 @@
 import ast
 import importlib.util
 import os
-import sys
+import argparse
+
 from conf_root import is_config_class
 
 from conf_root.parse_field import dataclass_to_wtform
+from conf_root.run_http import run_http
 
 
 def extract_classes_from_file(file_path):
@@ -12,17 +14,7 @@ def extract_classes_from_file(file_path):
         file_content = file.read()
 
     tree = ast.parse(file_content)
-    classes = [node.name for node in ast.walk(tree) if isinstance(node, ast.ClassDef)]
-    return classes
-
-
-def main():
-    if len(sys.argv) != 2:
-        print("Usage: python extract_classes.py <path_to_python_file>")
-        sys.exit(1)
-
-    file_path = sys.argv[1]
-    classes_name = extract_classes_from_file(file_path)
+    classes_name = [node.name for node in ast.walk(tree) if isinstance(node, ast.ClassDef)]
 
     # Dynamically import the module
     module_name = os.path.splitext(os.path.basename(file_path))[0]
@@ -31,17 +23,25 @@ def main():
     spec.loader.exec_module(module)
 
     # Load the classes from the module
-    classes = [getattr(module, class_name) for class_name in classes_name]
+    classes = [getattr(module, class_name, None) for class_name in classes_name]
+    classes = [cls for cls in classes if cls is not None and is_config_class(cls)]
+    return classes
 
-    if classes:
-        print(f"Classes defined in {file_path}:")
-        for cls in classes:
-            if is_config_class(cls):
-                form = dataclass_to_wtform(cls)
-                print(form)
 
-    else:
-        print(f"No classes found in {file_path}.")
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('filename', help="提取配置类的文件名")
+    parser.add_argument('--host', '-H', default='127.0.0.1', help='服务器的host')
+    parser.add_argument('--port', '-P', default=8080, help='服务器的port')
+    args = parser.parse_args()
+
+    classes = extract_classes_from_file(args.filename)
+    if len(classes) == 0:
+        print(f"No classes found in {args.filename}.")
+        return
+    print(f"Configuration classes defined in {args.filename}: {classes}")
+    forms = {cls: dataclass_to_wtform(cls) for cls in classes}
+    run_http(forms, host=args.host, port=args.port)
 
 
 if __name__ == "__main__":

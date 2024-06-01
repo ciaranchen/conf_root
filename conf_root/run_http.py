@@ -1,129 +1,119 @@
-from http.server import BaseHTTPRequestHandler, HTTPServer
+from typing import Dict, Type
 import urllib.parse
 from jinja2 import Template
-from wtforms import Form, StringField, IntegerField, BooleanField, FloatField
-from wtforms.validators import DataRequired
+from http.server import BaseHTTPRequestHandler, HTTPServer
 
 
-class Form1(Form):
-    username = StringField('Username', validators=[DataRequired()])
-    age = IntegerField('Age', validators=[DataRequired()])
+def make_handler(forms: Dict[Type, Type]):
+    class RequestHandler(BaseHTTPRequestHandler):
+        def __init__(self, request, client_address, server):
+            self.forms = forms
+            super().__init__(request, client_address, server)
 
+        @staticmethod
+        def render_index(names):
+            urls = [name if name.startswith('/') else '/' + name for name in names]
+            template_str = """
+            <!doctype html>
+            <html>
+            <head>
+                <title>ConfRoot Form Index</title>
+            </head>
+            <body>
+                <h1>ConfRoot Form Index</h1>
+                <ul>
+                    {% for name, url in zip(names, urls) %}
+                        <li><a href="{{ url }}">{{ name }}</a></li>
+                    {% endfor %}
+                </ul>
+            </body>
+            </html>
+            """
+            template = Template(template_str)
+            return template.render(names=names, urls=urls, zip=zip)
 
-class Form2(Form):
-    email = StringField('Email', validators=[DataRequired()])
-    score = FloatField('Score', validators=[DataRequired()])
+        @staticmethod
+        def render_form(name, form, action_url):
+            template_str = """
+            <!doctype html>
+            <html>
+            <head>
+                <title>{{ name }}</title>
+            </head>
+            <body>
+                <h1>{{ name }}</h1>
+                <form method="POST" action="{{ action_url }}">
+                    {% for field in form %}
+                        <p>
+                            {{ field.label }}<br>
+                            {{ field(size=20) }}<br>
+                            {% for error in field.errors %}
+                                <span style="color: red;">[{{ error }}]</span><br>
+                            {% endfor %}
+                        </p>
+                    {% endfor %}
+                    <p><input type="submit" value="Submit"></p>
+                </form>
+            </body>
+            </html>
+            """
+            template = Template(template_str)
+            return template.render(name=name, form=form, action_url=action_url)
 
+        def do_GET(self):
+            if self.path == '/':
+                names = [cls.__name__ for cls in self.forms.keys()]
+                response = self.render_index(names)
+                self.send_response(200)
+                self.send_header('Content-type', 'text/html')
+                self.end_headers()
+                self.wfile.write(response.encode('utf-8'))
+                return
+            for cls, form_class in self.forms.items():
+                name = cls.__name__
+                action_url = name if name.startswith('/') else '/' + name
+                if self.path == action_url:
+                    form = form_class()
+                    response = self.render_form(name, form, action_url)
+                    self.send_response(200)
+                    self.send_header('Content-type', 'text/html')
+                    self.end_headers()
+                    self.wfile.write(response.encode('utf-8'))
+                    return
 
-class RequestHandler(BaseHTTPRequestHandler):
-
-    def render_index(self):
-        template_str = """
-        <!doctype html>
-        <html>
-        <head>
-            <title>Multiple WTForms Example</title>
-        </head>
-        <body>
-            <h1>Form Index</h1>
-            <ul>
-                <li><a href="/form1">Form 1</a></li>
-                <li><a href="/form2">Form 2</a></li>
-            </ul>
-        </body>
-        </html>
-        """
-        template = Template(template_str)
-        return template.render()
-
-    def render_form(self, form, action_url):
-        template_str = """
-        <!doctype html>
-        <html>
-        <head>
-            <title>Multiple WTForms Example</title>
-        </head>
-        <body>
-            <h1>Multiple WTForms Example</h1>
-            <form method="POST" action="{{ action_url }}">
-                {{ form.hidden_tag() }}
-                {% for field in form %}
-                    <p>
-                        {{ field.label }}<br>
-                        {{ field(size=20) }}<br>
-                        {% for error in field.errors %}
-                            <span style="color: red;">[{{ error }}]</span><br>
-                        {% endfor %}
-                    </p>
-                {% endfor %}
-                <p><input type="submit" value="Submit"></p>
-            </form>
-        </body>
-        </html>
-        """
-        template = Template(template_str)
-        return template.render(form=form, action_url=action_url)
-
-    def do_GET(self):
-        if self.path == '/':
-            response = self.render_index()
-            self.send_response(200)
-            self.send_header('Content-type', 'text/html')
-            self.end_headers()
-            self.wfile.write(response.encode('utf-8'))
-        elif self.path == '/form1':
-            form = Form1()
-            action_url = '/form1'
-            response = self.render_form(form, action_url)
-            self.send_response(200)
-            self.send_header('Content-type', 'text/html')
-            self.end_headers()
-            self.wfile.write(response.encode('utf-8'))
-        elif self.path == '/form2':
-            form = Form2()
-            action_url = '/form2'
-            response = self.render_form(form, action_url)
-            self.send_response(200)
-            self.send_header('Content-type', 'text/html')
-            self.end_headers()
-            self.wfile.write(response.encode('utf-8'))
-        else:
+            # 如果没有匹配的form。
             self.send_response(404)
             self.end_headers()
 
-    def do_POST(self):
-        content_length = int(self.headers['Content-Length'])
-        post_data = self.rfile.read(content_length)
-        post_data = urllib.parse.parse_qs(post_data.decode('utf-8'))
+        def do_POST(self):
+            content_length = int(self.headers['Content-Length'])
+            post_data = self.rfile.read(content_length)
+            post_data = urllib.parse.parse_qsl(post_data.decode('utf-8'))
 
-        if self.path == '/form1':
-            form = Form1(data=post_data)
-            action_url = '/form1'
-        elif self.path == '/form2':
-            form = Form2(data=post_data)
-            action_url = '/form2'
-        else:
+            for cls, form_class in self.forms.items():
+                name = cls.__name__
+                action_url = name if name.startswith('/') else '/' + name
+                if self.path == action_url:
+                    form = form_class(data=post_data)
+                    print(form.data)
+                    if form.validate():
+                        response = f"Form submitted! Data: {form.data}"
+                    else:
+                        response = self.render_form(name, form, action_url)
+                    self.send_response(200)
+                    self.send_header('Content-type', 'text/html')
+                    self.end_headers()
+                    self.wfile.write(response.encode('utf-8'))
+                    return
             self.send_response(404)
             self.end_headers()
-            return
 
-        if form.validate():
-            response = f"Form submitted! Data: {form.data}"
-        else:
-            response = self.render_form(form, action_url)
-
-        self.send_response(200)
-        self.send_header('Content-type', 'text/html')
-        self.end_headers()
-        self.wfile.write(response.encode('utf-8'))
+    return RequestHandler
 
 
-def run(server_class=HTTPServer, handler_class=RequestHandler, port=8080):
-    server_address = ('', port)
-    httpd = server_class(server_address, handler_class)
-    print(f'Starting httpd server on port {port}...')
+def run_http(forms, host='127.0.0.1', port=8080):
+    server_address = (host, port)
+    handler_class = make_handler(forms)
+    httpd = HTTPServer(server_address, handler_class)
+    print(f'Starting httpd server on http://{host}:{port}/ ...')
     httpd.serve_forever()
-
-
-if __name__ == "__main__":
-    run()
