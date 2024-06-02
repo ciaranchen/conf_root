@@ -136,8 +136,9 @@ class ConfRoot:
 
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('filename', help="提取配置类的文件名")
+    parser = argparse.ArgumentParser(prog='conf-root-web',
+                                     description="这个脚本允许您在一个网页中可视化地修改您的配置文件。")
+    parser.add_argument('filename', help="提取配置类的Python文件名")
     parser.add_argument('--host', '-H', default='127.0.0.1', help='服务器的host')
     parser.add_argument('--port', '-P', default=8080, help='服务器的port')
     args = parser.parse_args()

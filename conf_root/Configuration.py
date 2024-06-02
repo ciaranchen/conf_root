@@ -27,11 +27,8 @@ class Configuration:
     @property
     def all_dataclass(self):
         def _recursive_dataclass(cls):
-            res = []
             if is_dataclass(cls):
-                for field in dataclasses_fields(cls):
-                    res.extend(_recursive_dataclass(field.type))
-                res.append(cls)
-            return res
+                return sum([_recursive_dataclass(field.type) for field in dataclasses_fields(cls)], [cls])
+            return []
 
         return _recursive_dataclass(self.cls)

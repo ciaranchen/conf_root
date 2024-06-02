@@ -7,7 +7,9 @@ setup(
     name="conf_root",  # 包名
     version="0.4.1",  # 版本号
     install_requires=[
-        "ruamel.yaml"
+        "ruamel.yaml>=0.18.6",
+        "wtforms>=3.1.2",
+        "jinja2>=3.1.4"
     ],
     author="ciaranchen",
     author_email="ciaranchen@qq.com",
@@ -22,4 +24,9 @@ setup(
         "Operating System :: OS Independent",
     ],
     python_requires='>=3.9',  # 兼容的Python版本
+    entry_points={
+        "console_scripts": [
+            'conf-root-web: conf_root.ConfRoot:main'
+        ],
+    },
 )

@@ -33,7 +33,9 @@ def data2obj(instance, data: Dict[str, Any], custom=False) -> None:
                 cls = field.type
                 if is_config_class(cls) and isinstance(value, dict):
                     sub_data = {field.name: value.get(field.name, None) for field in fields(cls)}
-                    sub_instance = cls()
+                    # 要求 sub_data 中的内容必须能满足初始化要求
+                    sub_instance = cls(**sub_data)
+                    # 后面继续做这个步骤的原因是避免从文件加载的cls内容，确保是用sub_data建立的。
                     data2obj(instance=sub_instance, data=sub_data, custom=custom)
                     value = sub_instance
                 else:
