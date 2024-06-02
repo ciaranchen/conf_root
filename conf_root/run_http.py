@@ -5,7 +5,7 @@ from dataclasses import fields
 from typing import Dict, Type
 
 from wtforms.validators import DataRequired, Disabled
-from wtforms import Form, StringField, IntegerField, BooleanField, FloatField, TextAreaField, FormField
+from wtforms import Form, StringField, IntegerField, BooleanField, FloatField, TextAreaField, FormField, SelectField, RadioField
 from jinja2 import Template
 import urllib.parse
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -43,7 +43,10 @@ def dataclass_to_wtform(dataclass_type):
         field_default = field.default
 
         # 根据字段类型添加相应的WTForms字段
-        if field_type == str:
+        if 'choices' in field.metadata:
+            choices = field.metadata['choices']
+            form_field = RadioField(field_name, choices=choices, validators=[DataRequired()], default=field_default)
+        elif field_type == str:
             form_field = StringField(field_name, validators=[DataRequired()], default=field_default)
         elif field_type == int:
             form_field = IntegerField(field_name, validators=[DataRequired()], default=field_default)
