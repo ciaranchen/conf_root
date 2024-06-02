@@ -6,7 +6,7 @@ from typing import Dict, Type
 
 from wtforms.validators import DataRequired, Disabled
 from wtforms import Form, StringField, IntegerField, BooleanField, FloatField, TextAreaField, FormField
-from jinja2 import Template
+from jinja2 import Environment, FileSystemLoader
 import urllib.parse
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
@@ -66,59 +66,18 @@ def make_handler(forms: Dict[Type, Type]):
     class RequestHandler(BaseHTTPRequestHandler):
         def __init__(self, request, client_address, server):
             self.forms = forms
+            template_path = os.path.join(os.path.dirname(__file__), 'templates')
+            self.jinja_env = Environment(loader=FileSystemLoader(template_path))
             super().__init__(request, client_address, server)
 
-        @staticmethod
-        def render_index(names):
+        def render_index(self, names):
             urls = [name if name.startswith('/') else '/' + name for name in names]
-            template_str = """
-            <!doctype html>
-            <html>
-            <head>
-                <title>ConfRoot Form Index</title>
-                <meta charset="UTF-8" />
-            </head>
-            <body>
-                <h1>ConfRoot Form Index</h1>
-                <ul>
-                    {% for name, url in zip(names, urls) %}
-                        <li><a href="{{ url }}">{{ name }}</a></li>
-                    {% endfor %}
-                </ul>
-            </body>
-            </html>
-            """
-            template = Template(template_str)
+            template = self.jinja_env.get_template('index.html')
             return template.render(names=names, urls=urls, zip=zip)
 
-        @staticmethod
-        def render_form(name, form, action_url):
-            template_str = """
-            <!doctype html>
-            <html>
-            <head>
-                <title>{{ name }}</title>
-                <meta charset="UTF-8" />
-            </head>
-            <body>
-                <h1>{{ name }}</h1>
-                <form method="POST" action="{{ action_url }}">
-                    {% for field in form %}
-                        <p>
-                            {{ field.label }}{% if field.flags.required %}*{% endif %}<br>
-                            {{ field(size=20) }}<br>
-                            {% for error in field.errors %}
-                                <span style="color: red;">[{{ error }}]</span><br>
-                            {% endfor %}
-                        </p>
-                    {% endfor %}
-                    <p><input type="submit" value="Submit"></p>
-                </form>
-            </body>
-            </html>
-            """
-            template = Template(template_str)
-            return template.render(name=name, form=form, action_url=action_url)
+        def render_form(self, name, form, action_url, msg=None):
+            template = self.jinja_env.get_template('form.html')
+            return template.render(name=name, form=form, action_url=action_url, msg=msg)
 
         def do_GET(self):
             if self.path == '/':
@@ -173,9 +132,15 @@ def make_handler(forms: Dict[Type, Type]):
                         instance = cls()
                         data2obj(instance, form.data)
                         configuration = cls.__CONF_ROOT__
-                        configuration.conf_root.agent.save(configuration, instance)
+                        agent = configuration.conf_root.agent
+                        agent.save(configuration, instance)
                         # 返回结果
-                        response = f"Form submitted! Data: {form.data} => {instance}"
+                        msg = {
+                            'location': agent.get_configuration_location(configuration),
+                            'data': form.data,
+                            'instance': instance
+                        }
+                        response = self.render_form(name, form, action_url, msg)
                     else:
                         response = self.render_form(name, form, action_url)
                     self.send_response(200)

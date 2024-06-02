@@ -1,0 +1,47 @@
+<!doctype html>
+<html>
+<head>
+    <title>ConfRoot Form Index</title>
+    <meta charset="UTF-8"/>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .container li {
+            padding: 10px 0;
+        }
+
+        .container a {
+            text-decoration: none; /* 去除超链接下划线 */
+            color: #007BFF; /* 与按钮颜色相呼应的链接颜色 */
+            display: block; /* 让链接覆盖整个列表项宽度 */
+            transition: color 0.3s; /* 颜色过渡效果 */
+        }
+
+        .container a:hover {
+            color: #0056b3; /* 鼠标悬停时的颜色变化 */
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>ConfRoot Form Index</h1>
+    <ul>
+        {% for name, url in zip(names, urls) %}
+        <li><a href="{{ url }}">{{ name }}</a></li>
+        {% endfor %}
+    </ul>
+</div>
+</body>
+</html>

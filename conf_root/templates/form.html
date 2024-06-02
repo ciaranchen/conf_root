@@ -1,0 +1,69 @@
+<!doctype html>
+<html>
+<head>
+    <title>{{ name }}</title>
+    <meta charset="UTF-8"/>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+
+        input, textarea, select {
+            margin-bottom: 15px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        button {
+            padding: 10px 15px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>{{ name }}</h1>
+    <form method="POST" action="{{ action_url }}">
+        {% for field in form %}
+        <p>
+            {{ field.label }}{% if field.flags.required %}*{% endif %}<br>
+            {{ field(size=20) }}<br>
+            {% for error in field.errors %}
+            <span style="color: red;">[{{ error }}]</span><br>
+            {% endfor %}
+        </p>
+        {% endfor %}
+        <p><input type="submit" value="Submit"></p>
+        {% if msg is not none %}
+        <p>Data: {{ msg['data'] }} <br>
+            Instance: {{ msg['instance'] }} <br>
+            <span style="color: green;">Successful! Saved to: {{ msg['location'] }}</span></p>
+        {% endif %}
+    </form>
+</div>
+</body>
+</html>
