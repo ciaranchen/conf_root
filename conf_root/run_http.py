@@ -3,6 +3,8 @@ import urllib.parse
 from jinja2 import Template
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
+from conf_root.agents.utils import data2obj
+
 
 def make_handler(forms: Dict[Type, Type]):
     class RequestHandler(BaseHTTPRequestHandler):
@@ -77,7 +79,6 @@ def make_handler(forms: Dict[Type, Type]):
                 if self.path == action_url:
                     # 构造Dataclass
                     obj = cls()
-                    # TODO: 处理递归的情况。
                     form = form_class(obj=obj)
                     response = self.render_form(name, form, action_url)
                     self.send_response(200)
@@ -94,21 +95,31 @@ def make_handler(forms: Dict[Type, Type]):
             content_length = int(self.headers['Content-Length'])
             post_data = self.rfile.read(content_length)
             post_data = urllib.parse.parse_qsl(post_data.decode('utf-8'))
+            post_data = dict(post_data)
+
+            def set_form_data(form, data):
+                for field_name, values in data.items():
+                    if '.' in field_name:
+                        sub_form_name, sub_field_name = field_name.split('.', 1)
+                        sub_form = getattr(form, sub_form_name)
+                        set_form_data(sub_form, {sub_field_name: values})
+                    else:
+                        form.process(None, {field_name: values})
 
             for cls, form_class in self.forms.items():
                 name = cls.__name__
                 action_url = name if name.startswith('/') else '/' + name
                 if self.path == action_url:
-                    form = form_class(data=post_data)
+                    form = form_class()
+                    set_form_data(form, post_data)
                     if form.validate():
-                        response = f"Form submitted! Data: {form.data}"
                         # 写入instance
                         instance = cls()
-                        for k, v in form.data.items():
-                            setattr(instance, k, v)
-                        print(instance)
+                        data2obj(instance, form.data)
                         configuration = cls.__CONF_ROOT__
                         configuration.conf_root.agent.save(configuration, instance)
+                        # 返回结果
+                        response = f"Form submitted! Data: {form.data} => {instance}"
                     else:
                         response = self.render_form(name, form, action_url)
                     self.send_response(200)

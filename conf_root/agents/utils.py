@@ -13,31 +13,6 @@ class ValidateException(BaseException):
     pass
 
 
-def recursive_data2obj(cls, data: Optional[Dict[str, Any]], custom=False) -> object:
-    if is_config_class(cls):
-        kwargs = {}
-        for field in fields(cls):
-            value = data.get(field.name, None)
-            # 在进行用户自定义 deserialize 之后，不再进入递归流程。
-            if (custom and 'deserialize' in field.metadata and
-                    (deserialize_func := field.metadata['deserialize']) is not None):
-                value = deserialize_func(value)
-                kwargs[field.name] = value
-                continue
-            # 递归反序列化。
-            if value is not None:
-                value = recursive_data2obj(field.type, value, custom)
-                if 'validators' in field.metadata:
-                    for validator in field.metadata['validators']:
-                        if not validator(value):
-                            raise ValidateException(f'{field} with value {value} validate failed.')
-                kwargs[field.name] = value
-        # 默认值将会在dataclass中有默认定义。
-        # TODO: 这个地方会不会有__init__的递归问题？
-        return cls(**kwargs)
-    return data
-
-
 def data2obj(instance, data: Dict[str, Any], custom=False) -> None:
     # 这个不需要加载default，因为origin_init中调用过了。
     for field in fields(instance):
@@ -48,7 +23,15 @@ def data2obj(instance, data: Dict[str, Any], custom=False) -> None:
                     (deserialize_func := field.metadata['deserialize']) is not None):
                 value = deserialize_func(value)
             else:
-                value = recursive_data2obj(field.type, value, custom)
+                cls = field.type
+                if is_config_class(cls) and isinstance(value, dict):
+                    sub_data = {field.name: value.get(field.name, None) for field in fields(cls)}
+                    sub_instance = cls()
+                    data2obj(instance=sub_instance, data=sub_data, custom=custom)
+                    value = sub_instance
+                else:
+                    value = value
+
             if 'validators' in field.metadata:
                 for validator in field.metadata['validators']:
                     if not validator(value):
