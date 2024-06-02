@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Optional, Type, List
 import logging
 
-from conf_root.Configuration import Configuration
+from conf_root.Configuration import Configuration, ConfigurationPreprocessField
 from conf_root.agents.BasicAgent import BasicAgent
 from conf_root.agents.YamlAgent import YamlAgent
 from conf_root.run_http import run_http, extract_classes_from_file, dataclass_to_wtform
@@ -12,6 +12,13 @@ from conf_root.run_http import run_http, extract_classes_from_file, dataclass_to
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     datefmt='%m-%d %H:%M:%S')
 logger = logging.getLogger(__name__)
+
+
+def preprocess(cls):
+    for name, type in cls.__annotations__.items():
+        if (default := getattr(cls, name, None)) is not None:
+            if isinstance(default, ConfigurationPreprocessField):
+                setattr(cls, name, default.field())
 
 
 class ConfRoot:
@@ -26,6 +33,8 @@ class ConfRoot:
         def decorator(cls, name: Optional[str] = None, dynamic=False):
             if not is_dataclass(cls):
                 logger.debug(f'decorate class {cls.__qualname__} to dataclass...')
+                # 进行预处理
+                preprocess(cls)
                 cls = dataclass(cls)
             if name is None:
                 name = cls.__qualname__.replace('<locals>.', '')
@@ -102,6 +111,7 @@ class ConfRoot:
             # validators
             if action.choices:
                 metadata['validators'].append(lambda x: x in action.choices)
+                metadata['choices'] = action.choices
             if action.nargs:
                 if isinstance(action.nargs, int):
                     metadata['validators'].append(lambda x: len(x) == action.nargs)

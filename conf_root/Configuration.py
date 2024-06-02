@@ -1,7 +1,8 @@
 import logging
 import re
-from dataclasses import fields as dataclasses_fields, dataclass, is_dataclass
-from typing import Any
+from abc import abstractmethod
+from dataclasses import fields as dataclasses_fields, dataclass, is_dataclass, field as dataclass_field, Field
+from typing import Any, List
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     datefmt='%m-%d %H:%M:%S')
@@ -32,3 +33,18 @@ class Configuration:
             return []
 
         return _recursive_dataclass(self.cls)
+
+
+class ConfigurationPreprocessField:
+    @abstractmethod
+    def field(self) -> Field:
+        pass
+
+
+@dataclass
+class ChoiceField(ConfigurationPreprocessField):
+    choices: List
+
+    def field(self):
+        return dataclass_field(default=self.choices[0],
+                               metadata={'choices': self.choices, 'validators': [lambda x: x in self.choices]})

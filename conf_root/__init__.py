@@ -1,5 +1,5 @@
 from .ConfRoot import ConfRoot
-from .Configuration import is_config_class
+from .Configuration import is_config_class, ChoiceField
 from .utils import ValidateException
 from .agents.BasicAgent import BasicAgent
 from .agents.JsonAgent import JsonAgent
