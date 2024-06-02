@@ -6,8 +6,9 @@
 
 1. 为您定义的类生成一个配置文件；并优先使用配置文件中的值作为类中变量的值。
 2. 将某些科研项目中的argparse转换为dataclass，进而生成配置文件；从而可以在配置文件中修改输入。
+3. 提供脚本 `conf-root-web`。提供一个web界面，允许您可视化修改类定义的配置文件。
 
-> Note: 仅用于配置文件，因此不提倡在配置文件类中使用动态的变量。
+> Note: 仅用于配置文件，不提倡在配置文件类中使用动态的变量。
 
 ## 装饰类的定义生成配置文件
 
@@ -100,6 +101,18 @@ args_dataclass = ArgsClass(**vars(args))
 - cls_name。这个参数既是产生的dataclass类的类名，也是使用ConfRoot.wrap封装时的name参数。默认值为argparse。
 
 from_argparse 目前仅支持常见的官方Argparse动作，但是对于自定义的Action来说可能支持有限。这不意味着有不支持的命令行参数会导致报错，这些参数将会被忽略跳过。
+
+## Web界面可视化修改配置文件
+
+```shell
+conf-root-web [-h] [--host HOST] [--port PORT] filename
+```
+
+这个脚本允许您在一个网页中可视化地修改您的配置文件。
+
+- filename 提取配置类的Python文件名
+- HOST 服务器的host
+- PORT 服务器的port
 
 ## More Example
 

@@ -5,7 +5,7 @@ with open("README.md", "r", encoding='utf-8') as fh:
 
 setup(
     name="conf_root",  # 包名
-    version="0.4.1",  # 版本号
+    version="0.4.2",  # 版本号
     install_requires=[
         "ruamel.yaml>=0.18.6",
         "wtforms>=3.1.2",
@@ -26,7 +26,11 @@ setup(
     python_requires='>=3.9',  # 兼容的Python版本
     entry_points={
         "console_scripts": [
-            'conf-root-web: conf_root.ConfRoot:main'
+            'conf-root-web=conf_root.ConfRoot:main'
         ],
     },
+    package_data={
+        'conf_root': ['templates/*.html'],  # 这里指定你的html文件
+    },
+    include_package_data=True,  # 必须要有这一行
 )

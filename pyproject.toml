@@ -1,6 +1,6 @@
 [project]
 name = "conf_root"
-version = "0.4.1"
+version = "0.4.2"
 description = "基于dataclass的科研配置文件取用工具"
 authors = [
     { name = "ciaranchen", email = "ciaranchen@qq.com" },
