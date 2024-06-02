@@ -7,6 +7,7 @@ import logging
 from conf_root.Configuration import Configuration
 from conf_root.agents.BasicAgent import BasicAgent
 from conf_root.agents.YamlAgent import YamlAgent
+from conf_root.run_http import run_http, extract_classes_from_file, dataclass_to_wtform
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     datefmt='%m-%d %H:%M:%S')
@@ -132,3 +133,23 @@ class ConfRoot:
 
         cls = make_dataclass(cls_name.replace(f'.{self.agent.default_extension}', ''), fields)
         return self.config(cls)
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('filename', help="提取配置类的文件名")
+    parser.add_argument('--host', '-H', default='127.0.0.1', help='服务器的host')
+    parser.add_argument('--port', '-P', default=8080, help='服务器的port')
+    args = parser.parse_args()
+
+    classes = extract_classes_from_file(args.filename)
+    if len(classes) == 0:
+        print(f"No classes found in {args.filename}.")
+        return
+    print(f"Configuration classes defined in {args.filename}: {classes}")
+    forms = {cls: dataclass_to_wtform(cls) for cls in classes}
+    run_http(forms, host=args.host, port=args.port)
+
+
+if __name__ == "__main__":
+    main()

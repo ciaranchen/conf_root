@@ -1,9 +1,65 @@
+import os
+import ast
+import importlib.util
+from dataclasses import fields
 from typing import Dict, Type
-import urllib.parse
+
+from wtforms.validators import DataRequired, Disabled
+from wtforms import Form, StringField, IntegerField, BooleanField, FloatField, TextAreaField, FormField
 from jinja2 import Template
+import urllib.parse
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
-from conf_root.agents.utils import data2obj
+from conf_root.Configuration import is_config_class
+from conf_root.utils import data2obj
+
+
+def extract_classes_from_file(file_path):
+    with open(file_path, "r", encoding="utf-8") as file:
+        file_content = file.read()
+
+    tree = ast.parse(file_content)
+    classes_name = [node.name for node in ast.walk(tree) if isinstance(node, ast.ClassDef)]
+
+    # Dynamically import the module
+    module_name = os.path.splitext(os.path.basename(file_path))[0]
+    spec = importlib.util.spec_from_file_location(module_name, file_path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    # Load the classes from the module
+    classes = [getattr(module, class_name, None) for class_name in classes_name]
+    classes = [cls for cls in classes if cls is not None and is_config_class(cls)]
+    return classes
+
+
+def dataclass_to_wtform(dataclass_type):
+    class DynamicForm(Form):
+        pass
+
+    for field in fields(dataclass_type):
+        field_name = field.name
+        field_type = field.type
+        field_default = field.default
+
+        # 根据字段类型添加相应的WTForms字段
+        if field_type == str:
+            form_field = StringField(field_name, validators=[DataRequired()], default=field_default)
+        elif field_type == int:
+            form_field = IntegerField(field_name, validators=[DataRequired()], default=field_default)
+        elif field_type == bool:
+            form_field = BooleanField(field_name, validators=[DataRequired()], default=field_default)
+        elif field_type == float:
+            form_field = FloatField(field_name, validators=[DataRequired()], default=field_default)
+        elif is_config_class(field_type):
+            form_field = FormField(dataclass_to_wtform(field_type), field_name, separator='.')
+            pass
+        else:
+            form_field = TextAreaField(field_name, validators=[Disabled()], default=f"不支持在线编辑类型 {field_type}")
+            setattr(DynamicForm, "_" + field_name, form_field)
+            continue
+        setattr(DynamicForm, field_name, form_field)
+    return DynamicForm
 
 
 def make_handler(forms: Dict[Type, Type]):
@@ -97,14 +153,14 @@ def make_handler(forms: Dict[Type, Type]):
             post_data = urllib.parse.parse_qsl(post_data.decode('utf-8'))
             post_data = dict(post_data)
 
-            def set_form_data(form, data):
+            def set_form_data(form_obj, data):
                 for field_name, values in data.items():
                     if '.' in field_name:
                         sub_form_name, sub_field_name = field_name.split('.', 1)
-                        sub_form = getattr(form, sub_form_name)
+                        sub_form = getattr(form_obj, sub_form_name)
                         set_form_data(sub_form, {sub_field_name: values})
                     else:
-                        form.process(None, {field_name: values})
+                        form_obj.process(None, data={field_name: values})
 
             for cls, form_class in self.forms.items():
                 name = cls.__name__

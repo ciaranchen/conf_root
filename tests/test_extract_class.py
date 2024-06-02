@@ -3,7 +3,7 @@ import unittest
 from dataclasses import field
 
 from conf_root import ConfRoot
-from conf_root.extract_class import extract_classes_from_file
+from conf_root.run_http import extract_classes_from_file
 
 
 def my_decorator(cls):

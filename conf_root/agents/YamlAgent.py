@@ -4,7 +4,7 @@ from ruamel.yaml import YAML, CommentedMap
 
 from conf_root.Configuration import Configuration, is_config_class
 from conf_root.agents.BasicAgent import BasicAgent, OneFileAgent
-from conf_root.agents.utils import data2obj
+from conf_root.utils import data2obj
 
 
 def make_serializer(cls):
