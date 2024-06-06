@@ -39,7 +39,7 @@ app_config = AppConfig()
 
 ### 参数解释
 
-#### `ConfRoot(path = None, agent_class: Optional[Type[BasicAgent]] = YamlAgent)`
+#### ConfRoot(path = None, agent_class: Optional[Type[BasicAgent]] = YamlAgent)
 
 - path 为基本路径。当它为None时，将会设置为当前文件路径。
 - agent_class 为配置存储的形式。当前支持JsonAgent/YamlAgent/SingleFileYamlAgent。默认为YamlAgent。
@@ -48,7 +48,7 @@ app_config = AppConfig()
     - 如果指定为None，可以不产生配置文件存储；同时也不会为类添加save与load方法。
     - 可以继承BasicAgent进行拓展以适配更多类型的序列化方式。
 
-#### `ConfRoot.config`
+#### ConfRoot.config
 
 可以使用不同方式调用。详见上方示例。
 
@@ -93,7 +93,7 @@ args_dataclass = ArgsClass(**vars(args))
 
 ### 参数解释
 
-#### `ConfRoot.from_argparse(parser: argparse.ArgumentParser, cls_name: str = 'argparse')`
+#### ConfRoot.from_argparse(parser: argparse.ArgumentParser, cls_name: str = 'argparse')
 
 解析Argparse并转换为dataclass，并且用ConfRoot.wrap封装它
 
@@ -104,15 +104,38 @@ from_argparse 目前仅支持常见的官方Argparse动作，但是对于自定�
 
 ## Web界面可视化修改配置文件
 
+### 命令行使用方法
+
 ```shell
 conf-root-web [-h] [--host HOST] [--port PORT] filename
 ```
 
-这个脚本允许您在一个网页中可视化地修改您的配置文件。
+这个脚本允许您在一个网页中可视化地修改您的配置文件。它能读取配置文件中暴露的ConfRoot配置类，并且生成一个可视化修改
 
 - filename 提取配置类的Python文件名
-- HOST 服务器的host
-- PORT 服务器的port
+- HOST 服务器的host，默认为 127.0.0.1
+- PORT 服务器的port，默认为 8080
+
+### 代码中的使用方法
+
+```python
+from conf_root import ConfRoot
+
+
+@ConfRoot().config('config')
+class AppConfig:
+    database_host: str = 'localhost'
+    database_port: int = 5432
+
+
+ConfRoot.serve([AppConfig], host='0.0.0.0', port=8000)
+```
+
+#### ConfRoot.serve(classes, host='127.0.0.1', port=8080)
+
+- classes 需要展示的配置类数组。
+- HOST 服务器的host，默认为 127.0.0.1
+- PORT 服务器的port，默认为 8080
 
 ## More Example
 

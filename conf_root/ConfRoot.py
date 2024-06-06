@@ -134,6 +134,11 @@ class ConfRoot:
         cls = make_dataclass(cls_name.replace(f'.{self.agent.default_extension}', ''), fields)
         return self.config(cls)
 
+    @staticmethod
+    def serve(classes, host='127.0.0.1', port=8080):
+        forms = {cls: dataclass_to_wtform(cls) for cls in classes}
+        run_http(forms, host=host, port=port)
+
 
 def main():
     parser = argparse.ArgumentParser(prog='conf-root-web',
@@ -148,8 +153,7 @@ def main():
         print(f"No classes found in {args.filename}.")
         return
     print(f"Configuration classes defined in {args.filename}: {classes}")
-    forms = {cls: dataclass_to_wtform(cls) for cls in classes}
-    run_http(forms, host=args.host, port=args.port)
+    ConfRoot.serve(classes, args.host, args.port)
 
 
 if __name__ == "__main__":
