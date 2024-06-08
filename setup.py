@@ -5,7 +5,7 @@ with open("README.md", "r", encoding='utf-8') as fh:
 
 setup(
     name="conf_root",  # 包名
-    version="0.4.2",  # 版本号
+    version="0.4.3",  # 版本号
     install_requires=[
         "ruamel.yaml>=0.18.6",
         "wtforms>=3.1.2",

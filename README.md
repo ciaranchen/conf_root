@@ -133,7 +133,7 @@ ConfRoot.serve([AppConfig], host='0.0.0.0', port=8000)
 
 #### ConfRoot.serve(classes, host='127.0.0.1', port=8080)
 
-- classes 需要展示的配置类数组。
+- classes 需要展示的配置类列表。
 - HOST 服务器的host，默认为 127.0.0.1
 - PORT 服务器的port，默认为 8080
 
