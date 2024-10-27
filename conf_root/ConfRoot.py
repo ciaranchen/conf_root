@@ -9,8 +9,6 @@ from conf_root.agents.BasicAgent import BasicAgent
 from conf_root.agents.YamlAgent import YamlAgent
 from conf_root.run_http import run_http, extract_classes_from_file, dataclass_to_wtform
 
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                    datefmt='%m-%d %H:%M:%S')
 logger = logging.getLogger(__name__)
 
 

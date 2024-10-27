@@ -1,15 +1,10 @@
 import os
-import re
 from abc import abstractmethod
-from functools import cached_property
 from pathlib import Path
-from typing import Any, Dict
 import logging
 
 from conf_root.Configuration import Configuration
 
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                    datefmt='%m-%d %H:%M:%S')
 logger = logging.getLogger(__name__)
 
 

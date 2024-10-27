@@ -1,12 +1,7 @@
-import logging
 import re
 from abc import abstractmethod
 from dataclasses import fields as dataclasses_fields, dataclass, is_dataclass, field as dataclass_field, Field
 from typing import Any, List
-
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                    datefmt='%m-%d %H:%M:%S')
-logger = logging.getLogger(__name__)
 
 
 def is_config_class(cls_or_instance):
