@@ -45,16 +45,22 @@ class ConfRoot:
 
             def decorated_init(_self, *args, **kwargs):
                 origin_init(_self, *args, **kwargs)
-                self.post_init(_self, configuration)
+                _configuration = getattr(cls, '__CONF_ROOT__')
+                cr_stuff = _configuration.conf_root
+                cr_stuff.post_init(_self, _configuration)
 
             decorated_init.__name__ = '__init__'
             cls.__init__ = decorated_init
             if self.persist and dynamic:
                 def save(_self):
-                    return self.agent.save(configuration, _self)
+                    _configuration = getattr(cls, '__CONF_ROOT__')
+                    cr_stuff = _configuration.conf_root
+                    return cr_stuff.agent.save(_configuration, _self)
 
                 def load(_self):
-                    return self.agent.load(configuration, _self)
+                    _configuration = getattr(cls, '__CONF_ROOT__')
+                    cr_stuff = _configuration.conf_root
+                    return cr_stuff.agent.load(_configuration, _self)
 
                 cls.save = save
                 cls.load = load
