@@ -151,12 +151,12 @@ from typing import List
 @ConfRoot(agent_class=None).config
 class DataBaseUserConfig:
     database_user: str = 'admin'
-    database_password: str = 'default_password'
+    database_pass: str = 'default_password'
 
 
-@ConfRoot(agent_class=JsonAgent).config
+@ConfRoot(agent_class=JsonAgent).config(name='config')
 # 可通过agent_class指定配置文件格式
-# 此时默认配置文件名为 `config.json`
+# 此时配置文件名为 `config.json`
 class AppConfig:
     database_host: str = 'localhost'
     database_port: int = 5432
@@ -170,4 +170,28 @@ class AppConfig:
 
 
 app_config = AppConfig()
+```
+
+```python
+from conf_root import ConfRoot, SingleFileYamlAgent
+
+# 使用基于Ruamel.yaml的SingleFileYamlAgent是最推荐的做法。
+# 会将所有产生的config映射到同一个Yaml文件中。
+db_config = ConfRoot('config', agent_class=SingleFileYamlAgent)
+
+
+@db_config.config
+class DataBaseUserConfig:
+    database_user: str = 'user1'
+    database_password: str = 'password1'
+
+
+@db_config.config
+class DataBaseUserConfig2:
+    database_user: str = 'user2'
+    database_password: str = 'password2'
+
+# 如需在类的定义外，可以在初始化配置类前修改加载文件的路径
+db_config.path = 'config_backup'
+db_config.agent = db_config.agent_class('config_backup')
 ```
