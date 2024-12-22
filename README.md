@@ -39,9 +39,9 @@ app_config = AppConfig()
 
 ### 参数解释
 
-#### ConfRoot(path = None, agent_class: Optional[Type[BasicAgent]] = YamlAgent)
+#### ConfRoot(base_dir = None, agent_class: Optional[Type[BasicAgent]] = YamlAgent)
 
-- path 为基本路径。当它为None时，将会设置为当前文件路径。
+- base_dir 为基本路径。当它为None时，将会设置为当前文件路径。
 - agent_class 为配置存储的形式。当前支持JsonAgent/YamlAgent/SingleFileYamlAgent。默认为YamlAgent。
     - 对于存储到多个文件的agent（JsonAgent、YamlAgent），path是配置存储的文件夹路径。
     - 对于存储到单个文件的agent（SingleFileYamlAgent），path是配置存储的文件路径。
@@ -191,7 +191,8 @@ class DataBaseUserConfig2:
     database_user: str = 'user2'
     database_password: str = 'password2'
 
+
 # 如需在类的定义外，可以在初始化配置类前修改加载文件的路径
-db_config.path = 'config_backup'
+db_config.base_dir = 'config_backup'
 db_config.agent = db_config.agent_class('config_backup')
 ```

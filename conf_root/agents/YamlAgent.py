@@ -1,9 +1,9 @@
 import os.path
 from ruamel.yaml import YAML
 
-from conf_root.Configuration import Configuration, is_config_class
+from conf_root.Configuration import is_config_class
 from conf_root.agents.BasicAgent import BasicAgent, OneFileAgent, MultiFileAgent
-from conf_root.agents.utils import all_dataclass
+from conf_root.agents.utils import all_dataclass, make_serializer
 from conf_root.utils import data2obj
 
 
@@ -27,20 +27,21 @@ class YamlAgent(MultiFileAgent):
                 yaml.register_class(cls)
         return yaml
 
-    def load(self, location, instance):
-        super().load(location, instance)
+    def load(self, instance):
+        super().load(instance)
+        location = instance.__LOCATION__
         if not os.path.exists(location):
             return
         with open(location, encoding='utf-8') as file:
             # 将dict展开为对象。
             data = self.get_yaml(instance).load(file)
-        print(data)
         # 覆盖原instance中的变量:
         data2obj(instance, data)
         return instance
 
-    def save(self, location, instance):
-        super().save(location, instance)
+    def save(self, instance):
+        super().save(instance)
+        location = instance.__LOCATION__
         # 将dict转换为YAML并写入文件
         with open(location, "w") as file:
             self.get_yaml(instance).dump(instance, file)
@@ -52,31 +53,35 @@ class SingleFileYamlAgent(YamlAgent, OneFileAgent):
     """
     default_extension: str = '.yml'
 
-    def exist(self, location, instance) -> bool:
+    def exist(self, instance) -> bool:
         if not os.path.exists(self.location):
             return False
-        data = self._load(location, instance)
+        data = self._load(instance)
         return instance.__NAME__ in data
 
-    def _load(self, location, instance):
+    def _load(self, instance):
+        location = instance.__LOCATION__
         if not os.path.exists(location):
             return {}
         with open(location, 'r') as f:
             data = self.get_yaml(instance).load(f)
         return data if data is not None else {}
 
-    def load(self, location, instance):
-        BasicAgent.load(self, location, instance)
-        res = self._load(location, instance)
-        data = res[location.name]
+    def load(self, instance):
+        BasicAgent.load(self, instance)
+        res = self._load(instance)
+        name = instance.__NAME__
+        data = res[name]
         # 覆盖原instance中的变量
         data2obj(instance, data)
         return instance
 
-    def save(self, location: Configuration, instance) -> None:
-        BasicAgent.save(self, location, instance)
-        total_data = self._load(location)
-        total_data[location.name] = instance
+    def save(self, instance) -> None:
+        BasicAgent.save(self, instance)
+        total_data = self._load(instance)
+        name = instance.__NAME__
+        location = instance.__LOCATION__
+        total_data[name] = instance
 
         with open(self.location, 'w') as f:
-            self.get_yaml(location).dump(total_data, f)
+            self.get_yaml(instance).dump(total_data, f)

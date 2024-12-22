@@ -20,12 +20,12 @@ def preprocess(cls):
 
 
 class ConfRoot:
-    def __init__(self, path: str = None, agent_class: Optional[Type[BasicAgent]] = YamlAgent):
-        self.path = path if path is not None else '.'
+    def __init__(self, base_dir: str = None, agent_class: Optional[Type[BasicAgent]] = YamlAgent):
+        self.base_dir = base_dir if base_dir is not None else '.'
         self.agent_class = agent_class
         self.persist = (agent_class is not None)
         if self.persist:
-            self.agent = self.agent_class(self.path)
+            self.agent = self.agent_class(self.base_dir)
 
     def config(self, *args, **kwargs):
         def decorator(cls, name: Optional[str] = None, dynamic=False):
@@ -40,29 +40,28 @@ class ConfRoot:
             configuration = Configuration(name, cls, self)
             setattr(cls, '__CONF_ROOT__', self)
             setattr(cls, '__NAME__', name)
-            setattr(cls, '__LOCATION__', self.agent.initialize_location(name))
+            if self.persist:
+                setattr(cls, '__LOCATION__', self.agent.initialize_location(name))
 
             # 覆盖其 __init__ 函数
             origin_init = cls.__init__
 
             def decorated_init(_self, *args, **kwargs):
                 origin_init(_self, *args, **kwargs)
-                _location = getattr(cls, '__LOCATION__')
                 cr_stuff = getattr(cls, '__CONF_ROOT__')
-                cr_stuff.post_init(_self, _location)
+                # 这样写是为了允许继承和修改post_init方法。
+                cr_stuff.post_init(_self)
 
             decorated_init.__name__ = '__init__'
             cls.__init__ = decorated_init
             if self.persist and dynamic:
                 def save(_self):
-                    _location = getattr(cls, '__LOCATION__')
                     cr_stuff = getattr(cls, '__CONF_ROOT__')
-                    return cr_stuff.agent.save(_location, _self)
+                    return cr_stuff.agent.save(_self)
 
                 def load(_self):
-                    _configuration = getattr(cls, '__CONF_ROOT__')
-                    cr_stuff = _configuration.conf_root
-                    return cr_stuff.agent.load(_configuration, _self)
+                    cr_stuff = getattr(cls, '__CONF_ROOT__')
+                    return cr_stuff.agent.load(_self)
 
                 cls.save = save
                 cls.load = load
@@ -80,14 +79,14 @@ class ConfRoot:
         # @wrap() or @wrap(name='config')
         return lambda cls: decorator(cls, **kwargs)
 
-    def post_init(self, instance, configuration):
+    def post_init(self, instance):
         if self.persist:
-            if self.agent.exist(configuration):
+            if self.agent.exist(instance):
                 # 如果已存在，读取和实例化
-                self.agent.load(configuration, instance)
+                self.agent.load(instance)
             else:
                 # 若文件不存在，根据默认值创建
-                self.agent.save(configuration, instance)
+                self.agent.save(instance)
 
     def from_argparse(self, parser: argparse.ArgumentParser, cls_name: str = 'ArgparseConfig'):
         def get_default(action):

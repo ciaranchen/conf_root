@@ -76,7 +76,7 @@ class TestFields(unittest.TestCase):
             database_password: str = 'password2'
 
         # 如需在类的定义外，可以在初始化配置类前修改加载文件的路径
-        db_config.path = 'config_backup'
+        db_config.base_dir = 'config_backup'
         db_config.agent = db_config.agent_class('config_backup')
 
         # 开始测试

@@ -28,8 +28,8 @@ class TestSingleFileYamlAgent(unittest.TestCase):
 
         self.conf1 = AppConfig
         self.conf2 = AppConfig2
-        self.section_name1 = self.conf1.__CONF_ROOT__.name
-        self.section_name2 = self.conf2.__CONF_ROOT__.name
+        self.section_name1 = self.conf1.__NAME__
+        self.section_name2 = self.conf2.__NAME__
 
     @staticmethod
     def replace_text(filename, origin_text, replace_text):
