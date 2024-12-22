@@ -21,7 +21,7 @@ def preprocess(cls):
 
 class ConfRoot:
     def __init__(self, path: str = None, agent_class: Optional[Type[BasicAgent]] = YamlAgent):
-        self.path = Path(path) if path is not None else Path()
+        self.path = path if path is not None else '.'
         self.agent_class = agent_class
         self.persist = (agent_class is not None)
         if self.persist:
@@ -38,24 +38,26 @@ class ConfRoot:
                 name = cls.__qualname__.replace('<locals>.', '')
 
             configuration = Configuration(name, cls, self)
-            setattr(cls, '__CONF_ROOT__', configuration)
+            setattr(cls, '__CONF_ROOT__', self)
+            setattr(cls, '__NAME__', name)
+            setattr(cls, '__LOCATION__', self.agent.initialize_location(name))
 
             # 覆盖其 __init__ 函数
             origin_init = cls.__init__
 
             def decorated_init(_self, *args, **kwargs):
                 origin_init(_self, *args, **kwargs)
-                _configuration = getattr(cls, '__CONF_ROOT__')
-                cr_stuff = _configuration.conf_root
-                cr_stuff.post_init(_self, _configuration)
+                _location = getattr(cls, '__LOCATION__')
+                cr_stuff = getattr(cls, '__CONF_ROOT__')
+                cr_stuff.post_init(_self, _location)
 
             decorated_init.__name__ = '__init__'
             cls.__init__ = decorated_init
             if self.persist and dynamic:
                 def save(_self):
-                    _configuration = getattr(cls, '__CONF_ROOT__')
-                    cr_stuff = _configuration.conf_root
-                    return cr_stuff.agent.save(_configuration, _self)
+                    _location = getattr(cls, '__LOCATION__')
+                    cr_stuff = getattr(cls, '__CONF_ROOT__')
+                    return cr_stuff.agent.save(_location, _self)
 
                 def load(_self):
                     _configuration = getattr(cls, '__CONF_ROOT__')

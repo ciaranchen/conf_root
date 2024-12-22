@@ -139,7 +139,7 @@ def make_handler(forms: Dict[Type, Type]):
                         agent.save(configuration, instance)
                         # 返回结果
                         msg = {
-                            'location': agent.get_configuration_location(configuration),
+                            'location': agent.initialize_location(configuration),
                             'data': form.data,
                             'instance': instance
                         }
