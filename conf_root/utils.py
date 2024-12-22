@@ -1,3 +1,4 @@
+import re
 from dataclasses import fields
 from typing import Dict, Any
 
@@ -58,3 +59,9 @@ def obj2data(obj: Any) -> Dict[str, Any]:
             res[field.name] = obj2data(value)
         return res
     return obj
+
+
+def to_filename(name):
+    invalid_chars_pattern = r'[\\/:*?"<>|]'
+    filename = re.sub(invalid_chars_pattern, '_', name)
+    return filename

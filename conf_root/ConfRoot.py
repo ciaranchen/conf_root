@@ -1,13 +1,14 @@
 import argparse
 from dataclasses import make_dataclass, is_dataclass, MISSING, dataclass, field as dataclass_field
-from pathlib import Path
+from functools import update_wrapper
 from typing import Optional, Type, List
 import logging
 
-from conf_root.Configuration import Configuration, ConfigurationPreprocessField
+from conf_root.Configuration import ConfigurationPreprocessField
 from conf_root.agents.BasicAgent import BasicAgent
 from conf_root.agents.YamlAgent import YamlAgent
 from conf_root.run_http import run_http, extract_classes_from_file, dataclass_to_wtform
+from conf_root.utils import to_filename
 
 logger = logging.getLogger(__name__)
 
@@ -37,35 +38,35 @@ class ConfRoot:
             if name is None:
                 name = cls.__qualname__.replace('<locals>.', '')
 
-            configuration = Configuration(name, cls, self)
-            setattr(cls, '__CONF_ROOT__', self)
-            setattr(cls, '__NAME__', name)
+            @dataclass
+            class ConfigurationClass(cls):
+                __CONF_ROOT__ = self
+                __NAME__ = name
+                __LOCATION__ = None
+
+                def __init__(_self, *args, **kwargs):
+                    super().__init__(*args, **kwargs)
+                    cr_stuff = _self.__CONF_ROOT__
+                    # 这样写是为了允许继承和修改post_init方法。
+                    cr_stuff.post_init(_self)
+
+            # 避免在Configuration的__dict__原本类的 __dict__ 上进行更新。
+            update_wrapper(ConfigurationClass, cls, updated=[])
             if self.persist:
-                setattr(cls, '__LOCATION__', self.agent.initialize_location(name))
+                setattr(ConfigurationClass, '__LOCATION__', self.agent.initialize_location(to_filename(name)))
 
-            # 覆盖其 __init__ 函数
-            origin_init = cls.__init__
-
-            def decorated_init(_self, *args, **kwargs):
-                origin_init(_self, *args, **kwargs)
-                cr_stuff = getattr(cls, '__CONF_ROOT__')
-                # 这样写是为了允许继承和修改post_init方法。
-                cr_stuff.post_init(_self)
-
-            decorated_init.__name__ = '__init__'
-            cls.__init__ = decorated_init
             if self.persist and dynamic:
                 def save(_self):
-                    cr_stuff = getattr(cls, '__CONF_ROOT__')
+                    cr_stuff = _self.__CONF_ROOT__
                     return cr_stuff.agent.save(_self)
 
                 def load(_self):
-                    cr_stuff = getattr(cls, '__CONF_ROOT__')
+                    cr_stuff = _self.__CONF_ROOT__
                     return cr_stuff.agent.load(_self)
 
-                cls.save = save
-                cls.load = load
-            return cls
+                ConfigurationClass.save = save
+                ConfigurationClass.load = load
+            return ConfigurationClass
 
         if len(args) == 1 and isinstance(args[0], type):
             # 无参数情况下，相当于直接用类的定义调用decorator.
