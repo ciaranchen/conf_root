@@ -8,7 +8,7 @@
 2. 将某些科研项目中的argparse转换为dataclass，进而生成配置文件；从而可以在配置文件中修改输入。
 3. 提供脚本 `conf-root-web`。提供一个web界面，允许您可视化修改类定义的配置文件。（也许没那么必要）
 
-> Note: 仅用于配置文件，不提倡在配置文件类中使用动态的变量。
+> Note: 仅用于配置文件，不提倡在配置文件类中使用动态的变量和方法。
 
 ## 装饰类的定义生成配置文件
 
@@ -22,7 +22,7 @@
 from conf_root import ConfRoot
 
 
-# @ConfRoot().config(name='config')
+# @ConfRoot().config(filename='config')
 # @ConfRoot().config
 # 这个装饰器也支持上面这两种调用方式
 @ConfRoot().config('config')
@@ -39,23 +39,30 @@ app_config = AppConfig()
 
 ### 参数解释
 
-#### ConfRoot(base_dir = None, agent_class: Optional[Type[BasicAgent]] = YamlAgent)
+#### agent_class: Optional[Type[BasicAgent]] = YamlAgent)
 
-- base_dir 为基本路径。当它为None时，将会设置为当前文件路径。
 - agent_class 为配置存储的形式。当前支持JsonAgent/YamlAgent/SingleFileYamlAgent。默认为YamlAgent。
-    - 对于存储到多个文件的agent（JsonAgent、YamlAgent），path是配置存储的文件夹路径。
-    - 对于存储到单个文件的agent（SingleFileYamlAgent），path是配置存储的文件路径。
-    - 如果指定为None，可以不产生配置文件存储；同时也不会为类添加save与load方法。
-    - 可以继承BasicAgent进行拓展以适配更多类型的序列化方式。
+    - 对于存储到多个文件的agent（JsonAgent、YamlAgent）。存储到由参数指定的路径中，将覆盖原有结果。
+    - 对于存储到单个文件的agent（SingleFileYamlAgent）。存储到由参数指定的同一路径中时，将根据类的名称存取其中的数据。
+    - 如果指定为None，可以不产生配置文件存储。
+    - 可以自行对BasicAgent进行拓展以适配更多类型的序列化方式。
 
 #### ConfRoot.config
 
-可以使用不同方式调用。详见上方示例。
+可以使用不同方式调用。详见上方示例，其主要参数仅有 `filename` 一项。
 
-- name。该配置在path中的位置。默认为 `{cls.__qual_name__}`。
-    - 对于多文件存储，name为文件名。指定时可以带上agent相应的后缀名。
-    - 对于单文件存储，name为在文件中的section名。
-- dynamic 为是否允许动态加载与变更配置文件。默认为False。如果设定为True，将会为类添加`save` 和 `load`方法来动态写入或读取配置文件。
+- filename。保存的文件名。默认时为根据 `{cls.__qualname__}` 产生的文件名。
+
+config 函数将为原类型添加特殊的类变量，这允许动态地修改配置类的读写行为，实现如保存到另一个路径等功能，详情请参考 `examples/` 中的示例。
+
+- `__CONF_LOCATION__`: 用于修改配置文件的路径。
+- `__CONF_AGENT__`: 用于修改Agent对象。
+- `__CONF_ROOT__`: 即ConfRoot对象；这允许继承和重载ConfRoot类中的两个特殊的函数。详情请查看`ConfRoot.py` 和 `exmples/`
+  中的示例。
+    - `class_name`: 返回在（Yaml）配置文件中类的名称。
+    - `post_init`: 允许修改在初始化完成后检测、读取、写入配置文件的逻辑。
+
+config 还会在原类的基础上添加 `_save_configuration` 方法，方便直接写入配置文件。
 
 ### 对field的拓展说明
 
@@ -139,60 +146,4 @@ ConfRoot.serve([AppConfig], host='0.0.0.0', port=8000)
 
 ## More Example
 
-支持嵌套。
-嵌套时可以只指定agent=None来避免产生存储的文件。
-
-```python
-from conf_root import ConfRoot, JsonAgent
-from dataclasses import field
-from typing import List
-
-
-@ConfRoot(agent_class=None).config
-class DataBaseUserConfig:
-    database_user: str = 'admin'
-    database_pass: str = 'default_password'
-
-
-@ConfRoot(agent_class=JsonAgent).config(name='config')
-# 可通过agent_class指定配置文件格式
-# 此时配置文件名为 `config.json`
-class AppConfig:
-    database_host: str = 'localhost'
-    database_port: int = 5432
-    # 可嵌套定义, 支持使用dataclasses的field。
-    user_config: DataBaseUserConfig = field(default_factory=DataBaseUserConfig)
-    # 使用 config_field，支持dataclasses.field 的所有参数；同时可以自定义serialize方式与deserialize方法
-    user_list: List = field(default_factory=list, metadata={
-        'serialize': lambda xs: ','.join([x.lower() for x in xs]),
-        'deserialize': lambda s: [x.upper() for x in s.split(',')]
-    })
-
-
-app_config = AppConfig()
-```
-
-```python
-from conf_root import ConfRoot, SingleFileYamlAgent
-
-# 使用基于Ruamel.yaml的SingleFileYamlAgent是最推荐的做法。
-# 会将所有产生的config映射到同一个Yaml文件中。
-db_config = ConfRoot('config', agent_class=SingleFileYamlAgent)
-
-
-@db_config.config
-class DataBaseUserConfig:
-    database_user: str = 'user1'
-    database_password: str = 'password1'
-
-
-@db_config.config
-class DataBaseUserConfig2:
-    database_user: str = 'user2'
-    database_password: str = 'password2'
-
-
-# 如需在类的定义外，可以在初始化配置类前修改加载文件的路径
-db_config.base_dir = 'config_backup'
-db_config.agent = db_config.agent_class('config_backup')
-```
+参见 `examples/*`。
