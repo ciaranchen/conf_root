@@ -11,12 +11,12 @@ class YamlAgent(BasicAgent):
     default_extension = '.yml'
 
     @staticmethod
-    def get_yaml(instance):
+    def get_yaml(_class):
         yaml = YAML()
         yaml.preserve_quotes = True
         yaml.indent(mapping=2, sequence=4, offset=2)
 
-        for cls in all_dataclass(instance):
+        for cls in all_dataclass(_class):
             if is_config_class(cls):
                 # 'tag:yaml.org,2002:map'
                 name = class_name(cls)
@@ -34,7 +34,7 @@ class YamlAgent(BasicAgent):
             return
         with open(location, encoding='utf-8') as file:
             # 将dict展开为对象。
-            data = self.get_yaml(instance).load(file)
+            data = self.get_yaml(instance.__class__).load(file)
         # 覆盖原instance中的变量:
         data2obj(instance, data)
         return instance
@@ -44,7 +44,7 @@ class YamlAgent(BasicAgent):
         location = instance.__CONF_LOCATION__
         # 将dict转换为YAML并写入文件
         with open(location, "w") as file:
-            self.get_yaml(instance).dump(instance, file)
+            self.get_yaml(instance.__class__).dump(instance, file)
 
 
 class SingleFileYamlAgent(YamlAgent):
@@ -54,8 +54,6 @@ class SingleFileYamlAgent(YamlAgent):
     default_extension: str = '.yml'
 
     def exist(self, instance) -> bool:
-        if not os.path.exists(self.location):
-            return False
         data = self._load(instance)
         return class_name(instance.__class__) in data
 
@@ -64,7 +62,7 @@ class SingleFileYamlAgent(YamlAgent):
         if not os.path.exists(location):
             return {}
         with open(location, 'r') as f:
-            data = self.get_yaml(instance).load(f)
+            data = self.get_yaml(instance.__class__).load(f)
         return data if data is not None else {}
 
     def load(self, instance):
@@ -82,5 +80,6 @@ class SingleFileYamlAgent(YamlAgent):
         name = class_name(instance.__class__)
         total_data[name] = instance
 
-        with open(self.location, 'w') as f:
-            self.get_yaml(instance).dump(total_data, f)
+        location = instance.__CONF_LOCATION__
+        with open(location, 'w') as f:
+            self.get_yaml(instance.__class__).dump(total_data, f)

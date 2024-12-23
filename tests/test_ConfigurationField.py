@@ -78,7 +78,7 @@ class TestConfigurationField(unittest.TestCase):
         class AppConfig:
             name: str = field(metadata={'validators': [lambda x: x in ['a', 'b', 'c']]})
 
-        app_config =AppConfig('c')
+        app_config = AppConfig('c')
         replace_text(self.location, 'c', 'd')
         try:
             app_config.load()

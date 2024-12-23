@@ -20,15 +20,6 @@ def preprocess(cls):
                 setattr(cls, name, default.field())
 
 
-class Singleton:
-    _instance = None
-
-    def __new__(cls, *args, **kwargs):
-        if cls._instance is None:
-            cls._instance = super().__new__(cls, *args, **kwargs)
-        return cls._instance
-
-
 class ConfRoot:
     def __init__(self, agent_class: Optional[Type[BasicAgent]] = YamlAgent):
         self.agent_class = agent_class
@@ -45,7 +36,7 @@ class ConfRoot:
                 filename = class_name(cls)
 
             @dataclass
-            class ConfigurationClass(cls, Singleton):
+            class ConfigurationClass(cls):
                 __CONF_ROOT__ = self
                 # __CONF_AGENT__ = self.agent_class()
                 __CONF_LOCATION__ = filename
@@ -64,12 +55,12 @@ class ConfRoot:
 
             if self.persist and dynamic:
                 def save(_self):
-                    cr_stuff = _self.__CONF_ROOT__
-                    return cr_stuff.agent.save(_self)
+                    agent = _self.__CONF_AGENT__
+                    return agent.save(_self)
 
                 def load(_self):
-                    cr_stuff = _self.__CONF_ROOT__
-                    return cr_stuff.agent.load(_self)
+                    agent = _self.__CONF_AGENT__
+                    return agent.load(_self)
 
                 ConfigurationClass.save = save
                 ConfigurationClass.load = load
@@ -154,7 +145,7 @@ class ConfRoot:
 
         fields = sorted(fields, key=lambda x: x[2].default == MISSING, reverse=True)
 
-        cls = make_dataclass(cls_name.replace(f'.{self.agent.default_extension}', ''), fields)
+        cls = make_dataclass(cls_name, fields)
         return self.config(cls)
 
     @staticmethod

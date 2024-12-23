@@ -16,3 +16,4 @@ from .utils import ValidateException
 from .agents.BasicAgent import BasicAgent
 from .agents.JsonAgent import JsonAgent
 from .agents.YamlAgent import YamlAgent, SingleFileYamlAgent
+from .agents.utils import class_name

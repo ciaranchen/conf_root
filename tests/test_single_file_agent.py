@@ -3,6 +3,7 @@ import unittest
 from dataclasses import dataclass
 
 from conf_root import ConfRoot, SingleFileYamlAgent
+from conf_root.agents.utils import class_name
 from tests.utils import replace_text
 
 
@@ -11,16 +12,15 @@ class TestSingleFileYamlAgent(unittest.TestCase):
 
     def __init__(self, methodName="runTest"):
         super().__init__(methodName)
-        self.conf_root = ConfRoot(agent_class=SingleFileYamlAgent)
 
-        @self.conf_root.config(dynamic=True)
+        @ConfRoot(agent_class=SingleFileYamlAgent).config(self.location, dynamic=True)
         @dataclass
         class AppConfig:
             not_default: str
             database_host: str = 'localhost'
             database_port: int = 5432
 
-        @self.conf_root.config
+        @ConfRoot(agent_class=SingleFileYamlAgent).config(self.location)
         @dataclass
         class AppConfig2:
             one_thing: int = 42
@@ -28,8 +28,8 @@ class TestSingleFileYamlAgent(unittest.TestCase):
 
         self.conf1 = AppConfig
         self.conf2 = AppConfig2
-        self.section_name1 = self.conf1.__NAME__
-        self.section_name2 = self.conf2.__NAME__
+        self.section_name1 = class_name(AppConfig)
+        self.section_name2 = class_name(AppConfig2)
 
     @staticmethod
     def replace_text(filename, origin_text, replace_text):

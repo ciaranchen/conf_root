@@ -6,13 +6,12 @@ from ruamel.yaml import CommentedMap
 from dataclasses import is_dataclass, fields
 
 
-def all_dataclass(instance):
+def all_dataclass(_class):
     def _recursive_dataclass(cls):
         if is_dataclass(cls):
             return sum([_recursive_dataclass(field.type) for field in fields(cls)], [cls])
         return []
 
-    _class = instance.__class__
     return _recursive_dataclass(_class)
 
 
@@ -39,8 +38,8 @@ def ensure_suffix(path, default_extension):
 
 
 def class_name(cls):
-    if hasattr(cls, '__NAME__') and cls.__NAME__ is not None:
-        return cls.__NAME__
+    if hasattr(cls, '__CONF_NAME__') and cls.__CONF_NAME__ is not None:
+        return cls.__CONF_NAME__
     return cls.__qualname__.replace('<locals>.', '')
 
 
