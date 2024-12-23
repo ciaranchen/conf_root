@@ -15,7 +15,7 @@ class TestFields(unittest.TestCase):
             database_user: str = 'admin'
             database_pass: str = 'default_password'
 
-        @ConfRoot(agent_class=JsonAgent).config(filename='config', dynamic=True)
+        @ConfRoot(agent_class=JsonAgent).config(filename='config')
         # 可通过agent_class指定配置文件格式
         # 此时配置文件名为 `config.json`
         class AppConfig:
@@ -36,7 +36,7 @@ class TestFields(unittest.TestCase):
         app_config.user_list = ['Alice', 'Bob']
         app_config.user_config.database_user = 'db_user'
         app_config.user_config.database_pass = 'db_pass'
-        app_config.save()
+        app_config._save_configuration()
 
         filename = 'config.json'
         default_db_config_name = DataBaseUserConfig.__qualname__.replace('.<locals>.', '.')
@@ -51,7 +51,7 @@ class TestFields(unittest.TestCase):
         self.assertEqual(data['user_config']['database_user'], 'db_user')
         self.assertEqual(data['user_config']['database_pass'], 'db_pass')
 
-        app_config.load()
+        app_config = AppConfig()
         self.assertEqual(app_config.user_list[0], 'ALICE')
         self.assertEqual(app_config.user_list[1], 'BOB')
 

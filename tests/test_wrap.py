@@ -50,18 +50,6 @@ class TestWrap(unittest.TestCase):
         ConfRoot().config(filename=self.location)(self.conf_class)()
         self.assertTrue(os.path.exists(self.location))
 
-    def test_wrap_dynamic(self):
-        conf = ConfRoot().config(self.location, True)(self.conf_class)()
-        self.assertTrue(os.path.exists(self.location))
-        self.assertTrue(hasattr(conf, 'save'))
-        self.assertTrue(hasattr(conf, 'load'))
-
-    def test_wrap_named_dynamic(self):
-        conf = ConfRoot().config(dynamic=True)(self.conf_class)()
-        self.assertTrue(os.path.exists(self.q_location))
-        self.assertTrue(hasattr(conf, 'save'))
-        self.assertTrue(hasattr(conf, 'load'))
-
     def test_without_dataclass(self):
         @ConfRoot().config(self.location)
         class AppConfig:

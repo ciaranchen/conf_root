@@ -51,7 +51,7 @@ database_port: 5432
         with open(self.location, 'w') as file:
             file.write(content)
 
-        @ConfRoot(agent_class=self.agent).config(self.location, dynamic=True)
+        @ConfRoot(agent_class=self.agent).config(self.location)
         @dataclass
         class AppConfig:
             not_default: str
@@ -63,7 +63,7 @@ database_port: 5432
         self.assertEqual(app_config.database_port, 5432)
 
     def test_save(self):
-        @ConfRoot(agent_class=self.agent).config(self.location, dynamic=True)
+        @ConfRoot(agent_class=self.agent).config(self.location)
         @dataclass
         class AppConfig:
             not_default: str
@@ -73,7 +73,7 @@ database_port: 5432
         app_config = AppConfig('admin')
         app_config.database_host = '192.168.1.1'
         app_config.database_port = 3309
-        app_config.save()
+        app_config._save_configuration()
 
         # 外部修改配置文件后读取，结果应为配置文件内的设置。
         # 打开文件，读取内容

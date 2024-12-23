@@ -26,7 +26,7 @@ class ConfRoot:
         self.persist = (agent_class is not None)
 
     def config(self, *args, **kwargs):
-        def decorator(cls, filename: Optional[str] = None, dynamic=False):
+        def decorator(cls, filename: Optional[str] = None):
             if not is_dataclass(cls):
                 logger.debug(f'decorate class {cls.__qualname__} to dataclass...')
                 # 进行预处理
@@ -53,17 +53,12 @@ class ConfRoot:
                 setattr(ConfigurationClass, '__CONF_AGENT__', self.agent_class())
                 setattr(ConfigurationClass, '__CONF_LOCATION__', self.agent_class.formalize_filename(filename))
 
-            if self.persist and dynamic:
-                def save(_self):
+                # 设置保存方法
+                def _save_configuration(_self):
                     agent = _self.__CONF_AGENT__
                     return agent.save(_self)
 
-                def load(_self):
-                    agent = _self.__CONF_AGENT__
-                    return agent.load(_self)
-
-                ConfigurationClass.save = save
-                ConfigurationClass.load = load
+                ConfigurationClass._save_configuration = _save_configuration
             return ConfigurationClass
 
         if len(args) == 1 and isinstance(args[0], type):

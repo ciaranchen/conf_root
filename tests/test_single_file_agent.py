@@ -13,7 +13,7 @@ class TestSingleFileYamlAgent(unittest.TestCase):
     def __init__(self, methodName="runTest"):
         super().__init__(methodName)
 
-        @ConfRoot(agent_class=SingleFileYamlAgent).config(self.location, dynamic=True)
+        @ConfRoot(agent_class=SingleFileYamlAgent).config(self.location)
         @dataclass
         class AppConfig:
             not_default: str
@@ -61,7 +61,7 @@ class TestSingleFileYamlAgent(unittest.TestCase):
         app_config2 = self.conf2()
 
         app_config.database_port = 9527
-        app_config.save()
+        app_config._save_configuration()
 
         self.assertTrue(os.path.exists(self.location))
         with open(self.location, 'r') as file:

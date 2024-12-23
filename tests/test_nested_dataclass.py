@@ -62,7 +62,7 @@ nc_defined: !NestedConfig
         with open(self.location, 'w') as file:
             file.write(content)
 
-        DecoratedConfig = ConfRoot().config(self.location, dynamic=True)(AppConfig)
+        DecoratedConfig = ConfRoot().config(self.location)(AppConfig)
         app_config = DecoratedConfig(NestedConfig(config1='defined1', config2='defined2'))
         self.assertEqual(app_config.nc_default.config1, 'default_load1')
         self.assertIsNone(app_config.nc_default.config2)
@@ -71,11 +71,11 @@ nc_defined: !NestedConfig
         self.assertEqual(app_config.nc_defined.config2, 'load2')
 
     def test_save(self):
-        DecoratedConfig = ConfRoot().config(self.location, dynamic=True)(AppConfig)
+        DecoratedConfig = ConfRoot().config(self.location)(AppConfig)
         app_config = DecoratedConfig(NestedConfig(config1='defined1', config2='defined2'))
         app_config.nc_default.config1 = 'save_default'
         app_config.nc_defined.config1 = 'save_defined'
-        app_config.save()
+        app_config._save_configuration()
 
         # 外部修改配置文件后读取，结果应为配置文件内的设置。
         # 打开文件，读取内容
