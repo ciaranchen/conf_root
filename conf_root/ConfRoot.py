@@ -7,7 +7,6 @@ import logging
 from conf_root.Configuration import ConfigurationPreprocessField
 from conf_root.agents.BasicAgent import BasicAgent
 from conf_root.agents.YamlAgent import YamlAgent
-from conf_root.agents.utils import class_name
 from conf_root.run_http import run_http, extract_classes_from_file, dataclass_to_wtform
 
 logger = logging.getLogger(__name__)
@@ -33,7 +32,7 @@ class ConfRoot:
                 preprocess(cls)
                 cls = dataclass(cls)
             if filename is None:
-                filename = class_name(cls)
+                filename = self.class_name(cls)
 
             @dataclass
             class ConfigurationClass(cls):
@@ -72,6 +71,10 @@ class ConfRoot:
         # 无args, 只有kwargs的情况下，直接给出decorator
         # @wrap() or @wrap(name='config')
         return lambda cls: decorator(cls, **kwargs)
+
+    @staticmethod
+    def class_name(cls):
+        return cls.__qualname__.replace('<locals>.', '')
 
     def post_init(self, instance):
         if self.persist:

@@ -37,14 +37,8 @@ def ensure_suffix(path, default_extension):
         return path
 
 
-def class_name(cls):
-    if hasattr(cls, '__CONF_NAME__') and cls.__CONF_NAME__ is not None:
-        return cls.__CONF_NAME__
-    return cls.__qualname__.replace('<locals>.', '')
-
-
 def make_serializer(cls):
-    name = class_name(cls)
+    name = cls.__CONF_ROOT__.class_name(cls)
 
     def config_class_representer(dumper, data):
         data_dict = CommentedMap()

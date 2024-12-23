@@ -3,7 +3,7 @@ from ruamel.yaml import YAML
 
 from conf_root.Configuration import is_config_class
 from conf_root.agents.BasicAgent import BasicAgent
-from conf_root.agents.utils import all_dataclass, make_serializer, class_name
+from conf_root.agents.utils import all_dataclass, make_serializer
 from conf_root.utils import data2obj
 
 
@@ -19,7 +19,7 @@ class YamlAgent(BasicAgent):
         for cls in all_dataclass(_class):
             if is_config_class(cls):
                 # 'tag:yaml.org,2002:map'
-                name = class_name(cls)
+                name = cls.__CONF_ROOT__.class_name(cls)
                 representer, constructor = make_serializer(cls)
                 yaml.representer.add_representer(cls, representer)
                 yaml.constructor.add_constructor(f'!{name}', constructor)
@@ -55,7 +55,7 @@ class SingleFileYamlAgent(YamlAgent):
 
     def exist(self, instance) -> bool:
         data = self._load(instance)
-        return class_name(instance.__class__) in data
+        return instance.__CONF_ROOT__.class_name(instance.__class__) in data
 
     def _load(self, instance):
         location = instance.__CONF_LOCATION__
@@ -68,7 +68,7 @@ class SingleFileYamlAgent(YamlAgent):
     def load(self, instance):
         BasicAgent.load(self, instance)
         res = self._load(instance)
-        name = class_name(instance.__class__)
+        name = instance.__CONF_ROOT__.class_name(instance.__class__)
         data = res[name]
         # 覆盖原instance中的变量
         data2obj(instance, data)
@@ -77,7 +77,7 @@ class SingleFileYamlAgent(YamlAgent):
     def save(self, instance) -> None:
         BasicAgent.save(self, instance)
         total_data = self._load(instance)
-        name = class_name(instance.__class__)
+        name = instance.__CONF_ROOT__.class_name(instance.__class__)
         total_data[name] = instance
 
         location = instance.__CONF_LOCATION__

@@ -3,7 +3,6 @@ import unittest
 from dataclasses import dataclass
 
 from conf_root import ConfRoot, SingleFileYamlAgent
-from conf_root.agents.utils import class_name
 from tests.utils import replace_text
 
 
@@ -28,8 +27,8 @@ class TestSingleFileYamlAgent(unittest.TestCase):
 
         self.conf1 = AppConfig
         self.conf2 = AppConfig2
-        self.section_name1 = class_name(AppConfig)
-        self.section_name2 = class_name(AppConfig2)
+        self.section_name1 = AppConfig.__CONF_ROOT__.class_name(AppConfig)
+        self.section_name2 = AppConfig2.__CONF_ROOT__.class_name(AppConfig2)
 
     @staticmethod
     def replace_text(filename, origin_text, replace_text):
