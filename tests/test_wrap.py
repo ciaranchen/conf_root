@@ -46,8 +46,8 @@ class TestWrap(unittest.TestCase):
         self.assertTrue(os.path.exists(self.location))
 
     def test_wrap_with_named_args(self):
-        # @ConfRoot().config(name=self.location)
-        ConfRoot().config(name=self.location)(self.conf_class)()
+        # @ConfRoot().config(filename=self.location)
+        ConfRoot().config(filename=self.location)(self.conf_class)()
         self.assertTrue(os.path.exists(self.location))
 
     def test_wrap_dynamic(self):

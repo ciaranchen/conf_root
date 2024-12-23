@@ -1,10 +1,10 @@
 import json
 
-from conf_root.agents.BasicAgent import MultiFileAgent
+from conf_root.agents.BasicAgent import BasicAgent
 from conf_root.utils import data2obj, obj2data
 
 
-class JsonAgent(MultiFileAgent):
+class JsonAgent(BasicAgent):
     default_extension = '.json'
 
     def load(self, instance):

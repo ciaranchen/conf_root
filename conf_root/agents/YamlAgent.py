@@ -2,12 +2,12 @@ import os.path
 from ruamel.yaml import YAML
 
 from conf_root.Configuration import is_config_class
-from conf_root.agents.BasicAgent import BasicAgent, OneFileAgent, MultiFileAgent
-from conf_root.agents.utils import all_dataclass, make_serializer
+from conf_root.agents.BasicAgent import BasicAgent
+from conf_root.agents.utils import all_dataclass, make_serializer, class_name
 from conf_root.utils import data2obj
 
 
-class YamlAgent(MultiFileAgent):
+class YamlAgent(BasicAgent):
     default_extension = '.yml'
 
     @staticmethod
@@ -19,7 +19,7 @@ class YamlAgent(MultiFileAgent):
         for cls in all_dataclass(instance):
             if is_config_class(cls):
                 # 'tag:yaml.org,2002:map'
-                name = cls.__NAME__
+                name = class_name(cls)
                 representer, constructor = make_serializer(cls)
                 yaml.representer.add_representer(cls, representer)
                 yaml.constructor.add_constructor(f'!{name}', constructor)
@@ -29,7 +29,7 @@ class YamlAgent(MultiFileAgent):
 
     def load(self, instance):
         super().load(instance)
-        location = instance.__LOCATION__
+        location = instance.__CONF_LOCATION__
         if not os.path.exists(location):
             return
         with open(location, encoding='utf-8') as file:
@@ -41,13 +41,13 @@ class YamlAgent(MultiFileAgent):
 
     def save(self, instance):
         super().save(instance)
-        location = instance.__LOCATION__
+        location = instance.__CONF_LOCATION__
         # 将dict转换为YAML并写入文件
         with open(location, "w") as file:
             self.get_yaml(instance).dump(instance, file)
 
 
-class SingleFileYamlAgent(YamlAgent, OneFileAgent):
+class SingleFileYamlAgent(YamlAgent):
     """
     Similar with yaml agent, but save in single file.
     """
@@ -57,10 +57,10 @@ class SingleFileYamlAgent(YamlAgent, OneFileAgent):
         if not os.path.exists(self.location):
             return False
         data = self._load(instance)
-        return instance.__NAME__ in data
+        return class_name(instance.__class__) in data
 
     def _load(self, instance):
-        location = instance.__LOCATION__
+        location = instance.__CONF_LOCATION__
         if not os.path.exists(location):
             return {}
         with open(location, 'r') as f:
@@ -70,7 +70,7 @@ class SingleFileYamlAgent(YamlAgent, OneFileAgent):
     def load(self, instance):
         BasicAgent.load(self, instance)
         res = self._load(instance)
-        name = instance.__NAME__
+        name = class_name(instance.__class__)
         data = res[name]
         # 覆盖原instance中的变量
         data2obj(instance, data)
@@ -79,8 +79,7 @@ class SingleFileYamlAgent(YamlAgent, OneFileAgent):
     def save(self, instance) -> None:
         BasicAgent.save(self, instance)
         total_data = self._load(instance)
-        name = instance.__NAME__
-        location = instance.__LOCATION__
+        name = class_name(instance.__class__)
         total_data[name] = instance
 
         with open(self.location, 'w') as f:

@@ -15,7 +15,7 @@ class TestFields(unittest.TestCase):
             database_user: str = 'admin'
             database_pass: str = 'default_password'
 
-        @ConfRoot(agent_class=JsonAgent).config(name='config', dynamic=True)
+        @ConfRoot(agent_class=JsonAgent).config(filename='config', dynamic=True)
         # 可通过agent_class指定配置文件格式
         # 此时配置文件名为 `config.json`
         class AppConfig:

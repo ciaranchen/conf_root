@@ -1,5 +1,7 @@
 import dataclasses
 import os
+import re
+
 from ruamel.yaml import CommentedMap
 from dataclasses import is_dataclass, fields
 
@@ -12,6 +14,12 @@ def all_dataclass(instance):
 
     _class = instance.__class__
     return _recursive_dataclass(_class)
+
+
+def formalize_filename(name):
+    invalid_chars_pattern = r'[\\/:*?"<>|]'
+    filename = re.sub(invalid_chars_pattern, '_', name)
+    return filename
 
 
 def ensure_suffix(path, default_extension):
@@ -30,8 +38,14 @@ def ensure_suffix(path, default_extension):
         return path
 
 
+def class_name(cls):
+    if hasattr(cls, '__NAME__') and cls.__NAME__ is not None:
+        return cls.__NAME__
+    return cls.__qualname__.replace('<locals>.', '')
+
+
 def make_serializer(cls):
-    name = cls.__NAME__
+    name = class_name(cls)
 
     def config_class_representer(dumper, data):
         data_dict = CommentedMap()

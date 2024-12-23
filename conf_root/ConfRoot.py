@@ -7,8 +7,8 @@ import logging
 from conf_root.Configuration import ConfigurationPreprocessField
 from conf_root.agents.BasicAgent import BasicAgent
 from conf_root.agents.YamlAgent import YamlAgent
+from conf_root.agents.utils import class_name
 from conf_root.run_http import run_http, extract_classes_from_file, dataclass_to_wtform
-from conf_root.utils import to_filename
 
 logger = logging.getLogger(__name__)
 
@@ -20,29 +20,35 @@ def preprocess(cls):
                 setattr(cls, name, default.field())
 
 
+class Singleton:
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls, *args, **kwargs)
+        return cls._instance
+
+
 class ConfRoot:
-    def __init__(self, base_dir: str = None, agent_class: Optional[Type[BasicAgent]] = YamlAgent):
-        self.base_dir = base_dir if base_dir is not None else '.'
+    def __init__(self, agent_class: Optional[Type[BasicAgent]] = YamlAgent):
         self.agent_class = agent_class
         self.persist = (agent_class is not None)
-        if self.persist:
-            self.agent = self.agent_class(self.base_dir)
 
     def config(self, *args, **kwargs):
-        def decorator(cls, name: Optional[str] = None, dynamic=False):
+        def decorator(cls, filename: Optional[str] = None, dynamic=False):
             if not is_dataclass(cls):
                 logger.debug(f'decorate class {cls.__qualname__} to dataclass...')
                 # 进行预处理
                 preprocess(cls)
                 cls = dataclass(cls)
-            if name is None:
-                name = cls.__qualname__.replace('<locals>.', '')
+            if filename is None:
+                filename = class_name(cls)
 
             @dataclass
-            class ConfigurationClass(cls):
+            class ConfigurationClass(cls, Singleton):
                 __CONF_ROOT__ = self
-                __NAME__ = name
-                __LOCATION__ = None
+                # __CONF_AGENT__ = self.agent_class()
+                __CONF_LOCATION__ = filename
 
                 def __init__(_self, *args, **kwargs):
                     super().__init__(*args, **kwargs)
@@ -53,7 +59,8 @@ class ConfRoot:
             # 避免在Configuration的__dict__原本类的 __dict__ 上进行更新。
             update_wrapper(ConfigurationClass, cls, updated=[])
             if self.persist:
-                setattr(ConfigurationClass, '__LOCATION__', self.agent.initialize_location(to_filename(name)))
+                setattr(ConfigurationClass, '__CONF_AGENT__', self.agent_class())
+                setattr(ConfigurationClass, '__CONF_LOCATION__', self.agent_class.formalize_filename(filename))
 
             if self.persist and dynamic:
                 def save(_self):
@@ -82,12 +89,12 @@ class ConfRoot:
 
     def post_init(self, instance):
         if self.persist:
-            if self.agent.exist(instance):
+            if instance.__CONF_AGENT__.exist(instance):
                 # 如果已存在，读取和实例化
-                self.agent.load(instance)
+                instance.__CONF_AGENT__.load(instance)
             else:
                 # 若文件不存在，根据默认值创建
-                self.agent.save(instance)
+                instance.__CONF_AGENT__.save(instance)
 
     def from_argparse(self, parser: argparse.ArgumentParser, cls_name: str = 'ArgparseConfig'):
         def get_default(action):
