@@ -5,11 +5,9 @@ with open("README.md", "r", encoding='utf-8') as fh:
 
 setup(
     name="conf_root",  # 包名
-    version="0.5.0",  # 版本号
+    version="0.5.0-no-web",  # 版本号
     install_requires=[
-        "ruamel.yaml>=0.18.6",
-        "wtforms>=3.1.2",
-        "jinja2>=3.1.4"
+        "ruamel.yaml>=0.18.6"
     ],
     author="ciaranchen",
     author_email="ciaranchen@qq.com",
@@ -24,13 +22,4 @@ setup(
         "Operating System :: OS Independent",
     ],
     python_requires='>=3.9',  # 兼容的Python版本
-    entry_points={
-        "console_scripts": [
-            'conf-root-web=conf_root.ConfRoot:main'
-        ],
-    },
-    package_data={
-        'conf_root': ['templates/*.html'],  # 这里指定你的html文件
-    },
-    include_package_data=True,  # 必须要有这一行
 )
