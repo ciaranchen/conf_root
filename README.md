@@ -57,8 +57,7 @@ config 函数将为原类型添加特殊的类变量，这允许动态地修改�
 
 - `__CONF_LOCATION__`: 用于修改配置文件的路径。
 - `__CONF_AGENT__`: 用于修改Agent对象。
-- `__CONF_ROOT__`: 即ConfRoot对象；这允许继承和重载ConfRoot类中的两个特殊的函数。详情请查看`ConfRoot.py` 和 `exmples/`
-  中的示例。
+- `__CONF_ROOT__`: 用于修改ConfRoot对象；主要是允许继承和重载ConfRoot类中的两个特殊的函数。
     - `class_name`: 返回在（Yaml）配置文件中类的名称。
     - `post_init`: 允许修改在初始化完成后检测、读取、写入配置文件的逻辑。
 

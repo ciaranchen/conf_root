@@ -17,6 +17,18 @@ class DataBaseUserConfig2:
     database_password: str = 'password2'
 
 
+class DBName(ConfRoot):
+    @staticmethod
+    def class_name(cls):
+        return f'Custom{cls.__name__}'
+
+
 # 如需在类的定义外，可以在初始化配置类前修改加载文件的路径
-DataBaseUserConfig.__CONF_LOCATION__ = 'config_backup'
-DataBaseUserConfig2.__CONF_LOCATION__ = 'config_backup'
+DataBaseUserConfig.__CONF_LOCATION__ = 'config_backup.yml'
+DataBaseUserConfig2.__CONF_LOCATION__ = 'config_backup.yml'
+
+# 通过自定义__CONF_ROOT__可以改变类在yml存储中的名称。
+DataBaseUserConfig2.__CONF_ROOT__ = DBName(agent_class=SingleFileYamlAgent)
+
+# DataBaseUserConfig()
+# DataBaseUserConfig2()
