@@ -1,12 +1,19 @@
 # Conf Root
 
-![PyPI - Version](https://img.shields.io/pypi/v/conf_root)
+![conf_root - Version](https://img.shields.io/pypi/v/conf_root)
 
 基于dataclass的科研配置文件取用工具。主要想法是在大量进行实验时，参数经常变动而且难以记录。最好有一种方式能在人类能读懂的配置文件中写出所有的参数，这样每次运行的记录都相对完整且易于整理。库的主要功能如下：
 
 1. 为您定义的类生成一个配置文件；并优先使用配置文件中的值作为类中变量的值。
 2. 将某些科研项目中的argparse转换为dataclass，进而生成配置文件；从而可以在配置文件中修改输入。
-3. 提供脚本 `conf-root-web`。提供一个web界面，允许您可视化修改类定义的配置文件。（也许没那么必要）
+3. 提供脚本 `conf-root-web`。提供一个web界面，允许您可视化修改类定义的配置文件。
+
+安装方式如下。
+
+```
+pip install conf_root
+# 对于不需要使用 Web 界面的情况，可以使用 `pip install conf_root_pure`，避免不必要的依赖。
+```
 
 > Note: 仅用于配置文件，不提倡在配置文件类中使用动态的变量和方法。
 
