@@ -7,7 +7,6 @@ import logging
 from conf_root.Configuration import ConfigurationPreprocessField
 from conf_root.agents.BasicAgent import BasicAgent
 from conf_root.agents.YamlAgent import YamlAgent
-from conf_root.run_http import run_http, extract_classes_from_file, dataclass_to_wtform
 
 logger = logging.getLogger(__name__)
 
@@ -145,28 +144,3 @@ class ConfRoot:
 
         cls = make_dataclass(cls_name, fields)
         return self.config(cls)
-
-    @staticmethod
-    def serve(classes, host='127.0.0.1', port=8080):
-        forms = {cls: dataclass_to_wtform(cls) for cls in classes}
-        run_http(forms, host=host, port=port)
-
-
-def main():
-    parser = argparse.ArgumentParser(prog='conf-root-web',
-                                     description="这个脚本允许您在一个网页中可视化地修改您的配置文件。")
-    parser.add_argument('filename', help="提取配置类的Python文件名")
-    parser.add_argument('--host', '-H', default='127.0.0.1', help='服务器的host')
-    parser.add_argument('--port', '-P', default=8080, help='服务器的port')
-    args = parser.parse_args()
-
-    classes = extract_classes_from_file(args.filename)
-    if len(classes) == 0:
-        print(f"No classes found in {args.filename}.")
-        return
-    print(f"Configuration classes defined in {args.filename}: {classes}")
-    ConfRoot.serve(classes, args.host, args.port)
-
-
-if __name__ == "__main__":
-    main()
