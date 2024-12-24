@@ -4,8 +4,8 @@ with open("README.md", "r", encoding='utf-8') as fh:
     long_description = fh.read()
 
 setup(
-    name="conf_root",  # 包名
-    version="0.5.0-no-web",  # 版本号
+    name="conf_root_pure",  # 包名
+    version="0.5.0",  # 版本号
     install_requires=[
         "ruamel.yaml>=0.18.6"
     ],
