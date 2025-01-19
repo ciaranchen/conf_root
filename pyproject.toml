@@ -6,7 +6,8 @@ authors = [
     { name = "ciaranchen", email = "ciaranchen@qq.com" },
 ]
 dependencies = [
-    "ruamel-yaml>=0.18.6",
+    "pydantic>=2.10.5",
+    "ruamel-yaml>=0.18.6"
 ]
 
 [project.optional-dependencies]

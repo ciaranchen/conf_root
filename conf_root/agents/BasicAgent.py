@@ -8,9 +8,6 @@ logger = logging.getLogger(__name__)
 
 
 class BasicAgent:
-    """
-    此抽象类为所有Agent类定义接口。
-    """
     default_extension: str = '.undefined'
 
     @classmethod
@@ -18,16 +15,13 @@ class BasicAgent:
         filename = formalize_filename(filename)
         return ensure_suffix(filename, cls.default_extension)
 
-    def exist(self, instance) -> bool:
-        location = instance.__CONF_LOCATION__
-        return os.path.exists(location)
+    def exist(self, cls) -> bool:
+        return os.path.exists(cls.__CONF_LOCATION__)
 
     @abstractmethod
-    def load(self, instance):
-        location = instance.__CONF_LOCATION__
-        logger.debug(f'load {instance.__class__.__qualname__} from: {location}')
+    def load(self, cls):
+        logger.debug(f'load {cls.__qualname__} from: {cls.__CONF_LOCATION__}')
 
     @abstractmethod
     def save(self, instance):
-        location = instance.__CONF_LOCATION__
-        logger.debug(f'save {instance.__class__.__qualname__} to: {location}')
+        logger.debug(f'save {instance.__class__.__qualname__} to: {instance.__CONF_LOCATION__}')

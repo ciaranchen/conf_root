@@ -1,10 +1,12 @@
 import argparse
-from dataclasses import make_dataclass, is_dataclass, MISSING, dataclass, field as dataclass_field
+from dataclasses import make_dataclass, is_dataclass, MISSING, dataclass, field as dataclass_field, \
+    fields as dataclass_fields
 from functools import update_wrapper
 from typing import Optional, Type, List
 import logging
 
-from conf_root.Configuration import ConfigurationPreprocessField
+from pydantic import create_model, model_validator
+
 from conf_root.agents.BasicAgent import BasicAgent
 from conf_root.agents.YamlAgent import YamlAgent
 from conf_root.run_http import run_http, extract_classes_from_file, dataclass_to_wtform
@@ -12,52 +14,55 @@ from conf_root.run_http import run_http, extract_classes_from_file, dataclass_to
 logger = logging.getLogger(__name__)
 
 
-def preprocess(cls):
-    for name, type in cls.__annotations__.items():
-        if (default := getattr(cls, name, None)) is not None:
-            if isinstance(default, ConfigurationPreprocessField):
-                setattr(cls, name, default.field())
-
-
 class ConfRoot:
     def __init__(self, agent_class: Optional[Type[BasicAgent]] = YamlAgent):
         self.agent_class = agent_class
-        self.persist = (agent_class is not None)
 
     def config(self, *args, **kwargs):
         def decorator(cls, filename: Optional[str] = None):
             if not is_dataclass(cls):
-                logger.debug(f'decorate class {cls.__qualname__} to dataclass...')
-                # 进行预处理
-                preprocess(cls)
                 cls = dataclass(cls)
+            DynamicModel = create_model(
+                cls.__name__,
+                **{field.name: (field.type, field.default) if field.default is not MISSING else (field.type, ...)
+                   for field in dataclass_fields(cls)}
+            )
             if filename is None:
                 filename = self.class_name(cls)
 
-            @dataclass
-            class ConfigurationClass(cls):
+            class ConfigurationClass(DynamicModel):
                 __CONF_ROOT__ = self
-                # __CONF_AGENT__ = self.agent_class()
+                __CONF_AGENT__ = None
                 __CONF_LOCATION__ = filename
 
-                def __init__(_self, *args, **kwargs):
-                    super().__init__(*args, **kwargs)
-                    cr_stuff = _self.__CONF_ROOT__
-                    # 这样写是为了允许继承和修改post_init方法。
-                    cr_stuff.post_init(_self)
+                @model_validator(mode='wrap')
+                @classmethod
+                def check_and_load(cls, data, handler):
+                    # 如果存在，读取和实例化
+                    if cls.__CONF_AGENT__ and cls.__CONF_AGENT__.exist(cls):
+                        load_data = cls.__CONF_AGENT__.load(cls)
+                        # load_data 更优先
+                        data.update(load_data)
+                    return handler(data)
+
+                @model_validator(mode='after')
+                def post_init(_self):
+                    if _self.__CONF_AGENT__:
+                        _self.__CONF_AGENT__.save(_self)
+                    return _self
 
             # 避免在Configuration的__dict__原本类的 __dict__ 上进行更新。
             update_wrapper(ConfigurationClass, cls, updated=[])
-            if self.persist:
+            if self.agent_class is not None:
                 setattr(ConfigurationClass, '__CONF_AGENT__', self.agent_class())
                 setattr(ConfigurationClass, '__CONF_LOCATION__', self.agent_class.formalize_filename(filename))
 
                 # 设置保存方法
-                def _save_configuration(_self):
+                def save_configuration(_self):
                     agent = _self.__CONF_AGENT__
                     return agent.save(_self)
 
-                ConfigurationClass._save_configuration = _save_configuration
+                ConfigurationClass.save_configuration = save_configuration
             return ConfigurationClass
 
         if len(args) == 1 and isinstance(args[0], type):
@@ -75,15 +80,6 @@ class ConfRoot:
     @staticmethod
     def class_name(cls):
         return cls.__qualname__.replace('<locals>.', '')
-
-    def post_init(self, instance):
-        if self.persist:
-            if instance.__CONF_AGENT__.exist(instance):
-                # 如果已存在，读取和实例化
-                instance.__CONF_AGENT__.load(instance)
-            else:
-                # 若文件不存在，根据默认值创建
-                instance.__CONF_AGENT__.save(instance)
 
     def from_argparse(self, parser: argparse.ArgumentParser, cls_name: str = 'ArgparseConfig'):
         def get_default(action):

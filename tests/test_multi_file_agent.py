@@ -31,7 +31,7 @@ database_port: 5432
             database_host: str = 'localhost'
             database_port: int = 5432
 
-        app_config = AppConfig('admin')
+        app_config = AppConfig(not_default='admin')
         self.assertEqual(app_config.database_host, 'localhost')
         self.assertEqual(app_config.database_port, 5432)
         self.assertEqual(app_config.not_default, 'admin')
@@ -58,7 +58,7 @@ database_port: 5432
             database_host: str = 'localhost'
             database_port: int = 5432
 
-        app_config = AppConfig('admin')
+        app_config = AppConfig(not_default='admin')
         self.assertEqual(app_config.database_host, '127.0.0.1')
         self.assertEqual(app_config.database_port, 5432)
 
@@ -70,10 +70,10 @@ database_port: 5432
             database_host: str = 'localhost'
             database_port: int = 5432
 
-        app_config = AppConfig('admin')
+        app_config = AppConfig(not_default='admin')
         app_config.database_host = '192.168.1.1'
         app_config.database_port = 3309
-        app_config._save_configuration()
+        app_config.save_configuration()
 
         # 外部修改配置文件后读取，结果应为配置文件内的设置。
         # 打开文件，读取内容

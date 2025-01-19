@@ -7,7 +7,8 @@ setup(
     name="conf_root",  # 包名
     version="0.5.0",  # 版本号
     install_requires=[
-        "ruamel.yaml>=0.18.6",
+        "pydantic>=2.10.5"
+        "ruamel.yaml>=0.18.6"
     ],
     extras_require={
         "web": [
