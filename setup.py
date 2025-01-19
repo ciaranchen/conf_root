@@ -7,6 +7,7 @@ setup(
     name="conf_root_pure",  # 包名
     version="0.5.0",  # 版本号
     install_requires=[
+        "pydantic>=2.10.5"
         "ruamel.yaml>=0.18.6"
     ],
     author="ciaranchen",
