@@ -46,7 +46,7 @@ class TestSingleFileYamlAgent(unittest.TestCase):
             pass  # 如果文件不存在，忽略错误（也可以根据需求抛出异常）
 
     def test_create(self):
-        app_config = self.conf1('admin')
+        app_config = self.conf1(not_default='admin')
         app_config2 = self.conf2()
 
         self.assertTrue(os.path.exists(self.location))
@@ -56,11 +56,11 @@ class TestSingleFileYamlAgent(unittest.TestCase):
         self.assertTrue(self.section_name2 in content)
 
     def test_save_and_load(self):
-        app_config = self.conf1('admin')
+        app_config = self.conf1(not_default='admin')
         app_config2 = self.conf2()
 
         app_config.database_port = 9527
-        app_config._save_configuration()
+        app_config.save_configuration()
 
         self.assertTrue(os.path.exists(self.location))
         with open(self.location, 'r') as file:

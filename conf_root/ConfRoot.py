@@ -8,13 +8,13 @@ import logging
 from pydantic import create_model, model_validator
 
 from conf_root.agents.BasicAgent import BasicAgent
-from conf_root.agents.YamlAgent import YamlAgent
+from conf_root.agents.YamlAgent import SingleFileYamlAgent
 
 logger = logging.getLogger(__name__)
 
 
 class ConfRoot:
-    def __init__(self, agent_class: Optional[Type[BasicAgent]] = YamlAgent):
+    def __init__(self, agent_class: Optional[Type[BasicAgent]] = SingleFileYamlAgent):
         self.agent_class = agent_class
 
     def config(self, *args, **kwargs):
@@ -78,7 +78,11 @@ class ConfRoot:
 
     @staticmethod
     def class_name(cls):
-        return cls.__qualname__.replace('<locals>.', '')
+        return SingleFileYamlAgent.class_name(cls)
+
+    @staticmethod
+    def is_config_class(cls_or_instance):
+        return getattr(cls_or_instance, '__CONF_ROOT__', None) is not None
 
     def from_argparse(self, parser: argparse.ArgumentParser, cls_name: str = 'ArgparseConfig'):
         def get_default(action):
