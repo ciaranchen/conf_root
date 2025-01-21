@@ -67,14 +67,53 @@ class TestArgparse(unittest.TestCase):
         self.assertEqual(args_dataclass.arg2, 13)
 
     def test_action(self):
-        parser = argparse.ArgumentParser(description="Test action")
-        parser.add_argument("--verbose", action="store_true", help="Enable verbose mode")
+        parser = argparse.ArgumentParser(description="Test action from argparse documentation")
         parser.add_argument('--foo', action='store_const', const=42)
-        parser.add_argument("--items", nargs='+', type=str, help="List of items")
-        parser.add_argument('--count', '-c', action='count', default=0)
-        ArgsClass = ConfRoot().from_argparse(parser)
-        args_dataclass = ArgsClass()
+        parser.add_argument('--bar', action='store_true')
+        parser.add_argument('--baz', action='store_false')
 
-        self.assertFalse(hasattr(args_dataclass, 'help'))
-        self.assertTrue(args_dataclass.verbose)
+        parser.add_argument('--append', action='append')
+        # parser.add_argument('--str', dest='types', action='append_const', const=str)
+        # parser.add_argument('--int', dest='types', action='append_const', const=int)
+        parser.add_argument("--extend", action="extend", nargs="+", type=str)
+        parser.add_argument('--count', '-v', action='count', default=0)
+
+        parser.add_argument('--version', action='version', version='%(prog)s 2.0')
+
+        parser.add_argument('--opt', action=argparse.BooleanOptionalAction)
+        ArgsClass = ConfRoot().from_argparse(parser)
+        ns = parser.parse_args(
+            # --str - -int
+            '--foo --bar --baz --append 1 --append 2 --extend f1 f2 f3 -vvv --no-opt'.split())
+        print(vars(ns))
+        args_dataclass = ArgsClass(**vars(ns))
+
         self.assertEqual(args_dataclass.foo, 42)
+        self.assertEqual(args_dataclass.bar, True)
+        self.assertEqual(args_dataclass.baz, False)
+        self.assertEqual(len(args_dataclass.append), 2)
+        self.assertEqual(len(args_dataclass.extend), 3)
+        self.assertEqual(args_dataclass.count, 3)
+        self.assertEqual(args_dataclass.opt, False)
+
+
+    def test_skip_action(self):
+        class FooAction(argparse.Action):
+            def __init__(self, option_strings, dest, nargs=None, **kwargs):
+                if nargs is not None:
+                    raise ValueError("nargs not allowed")
+                super().__init__(option_strings, dest, **kwargs)
+
+            def __call__(self, parser, namespace, values, option_string=None):
+                print('%r %r %r' % (namespace, values, option_string))
+                setattr(namespace, self.dest, values)
+
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--foo', action=FooAction)
+        parser.add_argument('bar', action=FooAction)
+
+        ns = parser.parse_args('1 --foo 2'.split())
+        ArgsClass = ConfRoot().from_argparse(parser)
+        args_dataclass = ArgsClass(**vars(ns))
+
+
