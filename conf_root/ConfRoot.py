@@ -1,11 +1,10 @@
 import argparse
-from dataclasses import make_dataclass, is_dataclass, MISSING, dataclass, field as dataclass_field, \
-    fields as dataclass_fields
+from dataclasses import is_dataclass, MISSING, dataclass, field as dataclass_field, fields as dataclass_fields
 from functools import update_wrapper
 from typing import Optional, Type, List
 import logging
 
-from pydantic import create_model, model_validator
+from pydantic import create_model, model_validator, Field as PydanticField, BaseModel as PydanticBaseModel
 
 from conf_root.agents.BasicAgent import BasicAgent
 from conf_root.agents.YamlAgent import SingleFileYamlAgent
@@ -19,13 +18,16 @@ class ConfRoot:
 
     def config(self, *args, **kwargs):
         def decorator(cls, filename: Optional[str] = None):
-            if not is_dataclass(cls):
-                cls = dataclass(cls)
-            DynamicModel = create_model(
-                cls.__name__,
-                **{field.name: (field.type, field.default) if field.default is not MISSING else (field.type, ...)
-                   for field in dataclass_fields(cls)}
-            )
+            if isinstance(cls, PydanticBaseModel):
+                DynamicModel = cls
+            else:
+                if not is_dataclass(cls):
+                    cls = dataclass(cls)
+                DynamicModel = create_model(
+                    cls.__name__,
+                    **{field.name: (field.type, field.default) if field.default is not MISSING else (field.type, ...)
+                       for field in dataclass_fields(cls)}
+                )
             if filename is None:
                 filename = self.class_name(cls)
 
@@ -41,6 +43,7 @@ class ConfRoot:
                     if cls.__CONF_AGENT__ and cls.__CONF_AGENT__.exist(cls):
                         load_data = cls.__CONF_AGENT__.load(cls)
                         # load_data 更优先
+                        # TODO: 给出可修改的选项；作为ConfRoot的变量。
                         data.update(load_data)
                     return handler(data)
 
@@ -84,63 +87,67 @@ class ConfRoot:
     def is_config_class(cls_or_instance):
         return getattr(cls_or_instance, '__CONF_ROOT__', None) is not None
 
-    def from_argparse(self, parser: argparse.ArgumentParser, cls_name: str = 'ArgparseConfig'):
+    def from_argparse(self, parser: argparse.ArgumentParser, cls_name: str = 'ArgparseConfig',
+                      skip_dest: Optional[List] = None):
         def get_default(action):
             if action.default and action.default != argparse.SUPPRESS:
                 return action.default
             if action.const and isinstance(action, argparse._StoreConstAction):
                 return action.const
-            # 如果是Required的话，那么传入的参数中必定有它，所以不必有default。
-            return MISSING if action.required else None  # 实在没有default的话，就先给None了
 
         def get_type(action):
-            if action.type:
-                return action.type
             if action.nargs and action.nargs != '?':
                 return List
-            if (isinstance(action, argparse._AppendAction) or
-                    isinstance(action, argparse._AppendConstAction) or isinstance(action, argparse._ExtendAction)):
-                return List
+            # 如果有指定的type，直接使用指定的type
+            if action.type is not None:
+                return action.type
+            # 如果有default，则以default的类型优先
             default = get_default(action)
             if default:
                 return type(default)
+            return str
 
-        def default_field(action):
-            metadata = {'validators': []}
-            if action.help:
-                metadata['comment'] = action.help
-            # validators
-            if action.choices:
-                metadata['validators'].append(lambda x: x in action.choices)
-                metadata['choices'] = action.choices
-            if action.nargs:
-                if isinstance(action.nargs, int):
-                    metadata['validators'].append(lambda x: len(x) == action.nargs)
-                if action.nargs == '+':
-                    metadata['validators'].append(lambda x: len(x) > 0)
-            return dataclass_field(default=get_default(action), metadata=metadata)
-
-        fields = []
+        skip_dest = skip_dest if skip_dest is not None else []
+        fields = {}
         for action in parser._actions:
             name = action.dest
+            if name in skip_dest:
+                logger.info(f'Skip dest {name} action {action}')
+
+            # TODO: 使用try catch处理，添加为skip_dest.
+            field_type = get_type(action)
+            field_default = get_default(action)
+            # print(action)
+            # print(field_type, field_default)
+
             if isinstance(action, argparse._HelpAction) or isinstance(action, argparse._VersionAction):
                 continue
-            _SUPPORT_ACTIONS = [
-                argparse._AppendAction, argparse._AppendConstAction, argparse._CountAction, argparse._ExtendAction,
-                argparse._StoreAction, argparse._StoreConstAction, argparse._StoreFalseAction, argparse._StoreTrueAction
-            ]
-            if not any([isinstance(action, sa) for sa in _SUPPORT_ACTIONS]):
+            elif isinstance(action, argparse._StoreAction):
+                fields[name] = (field_type, PydanticField(default=field_default, description=action.help))
+            elif isinstance(action, argparse._StoreConstAction):
+                fields[name] = (type(action.const), action.const)
+            elif isinstance(action, argparse._StoreTrueAction) or isinstance(action, argparse._StoreFalseAction):
+                fields[name] = (bool, action.const)
+            elif (isinstance(action, argparse._AppendAction) or isinstance(action, argparse._AppendConstAction)
+                  or isinstance(action, argparse._ExtendAction)):
+                fields[name] = (List, PydanticField(default=field_default, description=action.help))
+            elif isinstance(action, argparse._CountAction):
+                fields[name] = (int, PydanticField(default=field_default, description=action.help))
+            elif isinstance(action, argparse.BooleanOptionalAction):
+                fields[name] = (bool, PydanticField(default=field_default, description=action.help))
+            else:
+                skip_dest.append(name)
                 logger.warning(f'Skiped Argparse: {action.dest} action {action.__class__.__name__}')
-                # 暂不考虑不支持的action
                 continue
-            # TODO: handle other Action.
+        cls = create_model(cls_name, **fields)
+        DynamicModel = self.config(cls)
 
-            _type = get_type(action)
-            field = (name, _type, default_field(action))
-            fields.append(field)
-            # print(field)
+        class HandleSkip(DynamicModel):
+            @model_validator(mode='wrap')
+            @classmethod
+            def skip_destination(cls, data, handler):
+                data = {k: v for k, v in data.items() if k not in skip_dest}
+                return handler(data)
 
-        fields = sorted(fields, key=lambda x: x[2].default == MISSING, reverse=True)
-
-        cls = make_dataclass(cls_name, fields)
-        return self.config(cls)
+        update_wrapper(HandleSkip, DynamicModel, updated=[])
+        return HandleSkip
