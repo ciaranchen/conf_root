@@ -16,5 +16,6 @@ class JsonAgent(BasicAgent):
     def save(self, instance):
         super().save(instance)
         location = instance.__CONF_LOCATION__
+        data = self.model_dump(instance)
         with open(location, "w") as file:
-            file.write(instance.model_dump_json())
+            json.dump(data, file)

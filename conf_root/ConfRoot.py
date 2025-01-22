@@ -1,10 +1,11 @@
 import argparse
 from dataclasses import is_dataclass, MISSING, dataclass, fields as dataclass_fields
 from functools import update_wrapper
-from typing import Optional, Type, List, Callable, Literal
+from typing import Optional, Type, List, Literal
 import logging
 
 from pydantic import create_model, model_validator, Field as PydanticField, BaseModel as PydanticBaseModel
+from pydantic._internal._model_construction import ModelMetaclass
 
 from conf_root.agents.BasicAgent import BasicAgent
 from conf_root.agents.YamlAgent import SingleFileYamlAgent
@@ -20,7 +21,7 @@ class ConfRoot:
 
     def config(self, *args, **kwargs):
         def decorator(cls, filename: Optional[str] = None):
-            if isinstance(cls, PydanticBaseModel):
+            if isinstance(cls, PydanticBaseModel) or isinstance(cls, ModelMetaclass):
                 DynamicModel = cls
             else:
                 if not is_dataclass(cls):

@@ -12,20 +12,9 @@ class YamlAgent(BasicAgent):
 
     @staticmethod
     def get_yaml():
-        def type_representer(dumper, data):
-            logger.warning(f'Skip represent type {data}')
-            return dumper.represent_data(None)
-
-        def function_representer(dumper, data):
-            logger.warning(f'Skip represent callable {data}')
-            return dumper.represent_data(None)
-
         yaml = YAML()
         yaml.preserve_quotes = True
         yaml.indent(mapping=2, sequence=4, offset=2)
-
-        yaml.representer.add_representer(type, type_representer)
-        yaml.representer.add_representer(callable, function_representer)
         return yaml
 
     def load(self, cls):
@@ -42,8 +31,9 @@ class YamlAgent(BasicAgent):
         super().save(instance)
         location = instance.__CONF_LOCATION__
         # 将dict转换为YAML并写入文件
+        data = self.model_dump(instance)
         with open(location, "w") as file:
-            self.get_yaml().dump(instance.model_dump(), file)
+            self.get_yaml().dump(data, file)
 
 
 class SingleFileYamlAgent(YamlAgent):
@@ -78,7 +68,7 @@ class SingleFileYamlAgent(YamlAgent):
         BasicAgent.save(self, instance)
         total_data = self._load(instance)
         name = self.class_name(instance.__class__)
-        total_data[name] = instance.model_dump()
+        total_data[name] = self.model_dump(instance)
 
         location = instance.__CONF_LOCATION__
         with open(location, 'w') as f:
