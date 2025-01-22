@@ -2,6 +2,7 @@ import os
 import re
 from abc import abstractmethod
 import logging
+from typing import Callable
 
 logger = logging.getLogger(__name__)
 
@@ -37,3 +38,26 @@ class BasicAgent:
     @abstractmethod
     def save(self, instance):
         logger.debug(f'save {instance.__class__.__qualname__} to: {instance.__CONF_LOCATION__}')
+
+    @staticmethod
+    def model_dump(instance):
+        def helper(data):
+            if isinstance(data, dict):
+                new_dict = {}
+                for key, value in data.items():
+                    if isinstance(value, type) or isinstance(value, Callable):
+                        continue
+                    new_dict[key] = helper(value)
+                return new_dict
+            elif isinstance(data, list):
+                new_list = []
+                for item in data:
+                    if isinstance(item, type) or isinstance(item, Callable):
+                        new_list.append(None)
+                    else:
+                        new_list.append(helper(item))
+                return new_list
+            else:
+                return data
+
+        return helper(instance.model_dump())
