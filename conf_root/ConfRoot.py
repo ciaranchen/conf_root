@@ -1,7 +1,7 @@
 import argparse
-from dataclasses import is_dataclass, MISSING, dataclass, field as dataclass_field, fields as dataclass_fields
+from dataclasses import is_dataclass, MISSING, dataclass, fields as dataclass_fields
 from functools import update_wrapper
-from typing import Optional, Type, List
+from typing import Optional, Type, List, Callable, Literal
 import logging
 
 from pydantic import create_model, model_validator, Field as PydanticField, BaseModel as PydanticBaseModel
@@ -13,8 +13,10 @@ logger = logging.getLogger(__name__)
 
 
 class ConfRoot:
-    def __init__(self, agent_class: Optional[Type[BasicAgent]] = SingleFileYamlAgent):
+    def __init__(self, agent_class: Optional[Type[BasicAgent]] = SingleFileYamlAgent,
+                 priority: Literal['file', 'param'] = 'file'):
         self.agent_class = agent_class
+        self.priority = priority
 
     def config(self, *args, **kwargs):
         def decorator(cls, filename: Optional[str] = None):
@@ -38,14 +40,18 @@ class ConfRoot:
 
                 @model_validator(mode='wrap')
                 @classmethod
-                def check_and_load(cls, data, handler):
+                def check_and_load(cls, param_data, handler):
                     # 如果存在，读取和实例化
                     if cls.__CONF_AGENT__ and cls.__CONF_AGENT__.exist(cls):
-                        load_data = cls.__CONF_AGENT__.load(cls)
-                        # load_data 更优先
-                        # TODO: 给出可修改的选项；作为ConfRoot的变量。
-                        data.update(load_data)
-                    return handler(data)
+                        file_data = cls.__CONF_AGENT__.load(cls)
+                        if self.priority == 'file':
+                            # 若文件的数据优先，则在param的基础上更新file数据。
+                            param_data.update(file_data)
+                            return handler(param_data)
+                        else:
+                            file_data.update(param_data)
+                            return handler(file_data)
+                    return handler(param_data)
 
                 @model_validator(mode='after')
                 def post_init(_self):
@@ -92,12 +98,13 @@ class ConfRoot:
         def get_default(action):
             if action.default and action.default != argparse.SUPPRESS:
                 return action.default
-            if action.const and isinstance(action, argparse._StoreConstAction):
+            if action.const:
                 return action.const
+            return None
 
         def get_type(action):
             if action.nargs and action.nargs != '?':
-                return List
+                return list
             # 如果有指定的type，直接使用指定的type
             if action.type is not None:
                 return action.type
@@ -114,18 +121,24 @@ class ConfRoot:
             if name in skip_dest:
                 logger.info(f'Skip dest {name} action {action}')
 
-            # TODO: 使用try catch处理，添加为skip_dest.
             field_type = get_type(action)
+            # 这不是一个完全稳妥的方案，还是能被绕过的
+            if issubclass(field_type, type) or issubclass(field_type, Callable):
+                skip_dest.append(name)
+                if name in fields:
+                    del fields[name]
+                logger.warning(f'Skip dest {name} action {action}: Unsupported type {field_type}')
+                continue
+            if not action.required:
+                field_type = Optional[field_type]
             field_default = get_default(action)
-            # print(action)
-            # print(field_type, field_default)
+            logger.debug(action)
+            logger.debug(str(field_type) + ' ' + str(field_default))
 
             if isinstance(action, argparse._HelpAction) or isinstance(action, argparse._VersionAction):
                 continue
-            elif isinstance(action, argparse._StoreAction):
+            elif isinstance(action, argparse._StoreAction) or isinstance(action, argparse._StoreConstAction):
                 fields[name] = (field_type, PydanticField(default=field_default, description=action.help))
-            elif isinstance(action, argparse._StoreConstAction):
-                fields[name] = (type(action.const), action.const)
             elif isinstance(action, argparse._StoreTrueAction) or isinstance(action, argparse._StoreFalseAction):
                 fields[name] = (bool, action.const)
             elif (isinstance(action, argparse._AppendAction) or isinstance(action, argparse._AppendConstAction)
@@ -139,7 +152,7 @@ class ConfRoot:
                 skip_dest.append(name)
                 logger.warning(f'Skiped Argparse: {action.dest} action {action.__class__.__name__}')
                 continue
-        cls = create_model(cls_name, **fields)
+        cls = create_model(cls_name, __doc__=parser.description, **fields)
         DynamicModel = self.config(cls)
 
         class HandleSkip(DynamicModel):
