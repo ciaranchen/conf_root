@@ -1,14 +1,16 @@
 import argparse
 import os
+import string
+import random
 import unittest
 
 from conf_root import ConfRoot
 
 
 class TestArgparse(unittest.TestCase):
-    def __init__(self, methodName="runTest"):
-        super().__init__(methodName)
-        self.location = 'ArgparseConfig.yml'
+    def setUp(self):
+        random_string = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
+        self.location = random_string + '.yml'
 
     def tearDown(self):
         # 这个方法将在每个测试方法结束后运行
@@ -23,7 +25,7 @@ class TestArgparse(unittest.TestCase):
         parser.add_argument("--arg1", default=10, type=int, help="Number 1")
         parser.add_argument("--arg2", default=20, type=int, help="Number 2")
         parser.add_argument("--arg3", type=int, help="Number 3")
-        ArgsClass = ConfRoot().from_argparse(parser, self.location)
+        ArgsClass = ConfRoot().from_argparse(parser, filename=self.location)
 
         args_namespace = parser.parse_args(['--arg2', '30'])
         # not required arg3
@@ -54,7 +56,7 @@ class TestArgparse(unittest.TestCase):
         parser.add_argument('--version', action='version', version='%(prog)s 2.0')
 
         parser.add_argument('--opt', action=argparse.BooleanOptionalAction)
-        ArgsClass = ConfRoot().from_argparse(parser)
+        ArgsClass = ConfRoot().from_argparse(parser, filename=self.location)
         ns = parser.parse_args(
             '--foo --bar --baz --append 1 --append 2 --str --int --extend f1 f2 f3 -vvv --no-opt'.split()
         )
@@ -84,14 +86,17 @@ class TestArgparse(unittest.TestCase):
         parser = argparse.ArgumentParser()
         parser.add_argument('--foo', action=FooAction)
         parser.add_argument('bar', action=FooAction)
+        # 由于yaml不支持写入type，可以使用其初始化配置类，但是这两个类型不会写入到文件。
         parser.add_argument('--str', dest='types', action='append_const', const=str)
         parser.add_argument('--int', dest='types', action='append_const', const=int)
 
         ns = parser.parse_args('1 --foo 2 --str --int'.split())
-        ArgsClass = ConfRoot().from_argparse(parser)
+        ArgsClass = ConfRoot().from_argparse(parser, filename=self.location)
         args_dataclass = ArgsClass(**vars(ns))
 
         self.assertFalse(hasattr(args_dataclass, 'foo'))
         self.assertFalse(hasattr(args_dataclass, 'bar'))
-        self.assertFalse(hasattr(args_dataclass, 'types'))
-
+        self.assertTrue(hasattr(args_dataclass, 'types'))
+        self.assertIs(args_dataclass.types[0], str)
+        self.assertIs(args_dataclass.types[1], int)
+        self.assertTrue(os.path.exists(self.location))

@@ -93,8 +93,8 @@ class ConfRoot:
     def is_config_class(cls_or_instance):
         return getattr(cls_or_instance, '__CONF_ROOT__', None) is not None
 
-    def from_argparse(self, parser: argparse.ArgumentParser, cls_name: str = 'ArgparseConfig',
-                      skip_dest: Optional[List] = None):
+    def from_argparse(self, parser: argparse.ArgumentParser, cls_name: str = 'ArgparseConfig', *args,
+                      skip_dest: Optional[List] = None, **kwargs):
         def get_default(action):
             if action.default and action.default != argparse.SUPPRESS:
                 return action.default
@@ -122,13 +122,6 @@ class ConfRoot:
                 logger.info(f'Skip dest {name} action {action}')
 
             field_type = get_type(action)
-            # 这不是一个完全稳妥的方案，还是能被绕过的
-            if issubclass(field_type, type) or issubclass(field_type, Callable):
-                skip_dest.append(name)
-                if name in fields:
-                    del fields[name]
-                logger.warning(f'Skip dest {name} action {action}: Unsupported type {field_type}')
-                continue
             if not action.required:
                 field_type = Optional[field_type]
             field_default = get_default(action)
@@ -153,7 +146,7 @@ class ConfRoot:
                 logger.warning(f'Skiped Argparse: {action.dest} action {action.__class__.__name__}')
                 continue
         cls = create_model(cls_name, __doc__=parser.description, **fields)
-        DynamicModel = self.config(cls)
+        DynamicModel = self.config(cls, *args, **kwargs)
 
         class HandleSkip(DynamicModel):
             @model_validator(mode='wrap')

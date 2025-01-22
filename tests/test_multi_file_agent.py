@@ -1,4 +1,6 @@
 import os
+import random
+import string
 import unittest
 from dataclasses import dataclass
 
@@ -9,11 +11,14 @@ class TestYamlAgent(unittest.TestCase):
     def __init__(self, methodName="runTest"):
         super().__init__(methodName)
         self.agent = YamlAgent
-        self.location = 'settings' + self.agent.default_extension
         self.test_load_content = """!AppConfig
 database_host: 127.0.0.1
 database_port: 5432
 """
+
+    def setUp(self):
+        random_string = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
+        self.location = random_string + self.agent.default_extension
 
     def tearDown(self):
         # 这个方法将在每个测试方法结束后运行
@@ -89,5 +94,4 @@ class TestJsonConfig(TestYamlAgent):
     def __init__(self, methodName="runTest"):
         super().__init__(methodName)
         self.agent = JsonAgent
-        self.location = 'settings' + self.agent.default_extension
         self.test_load_content = """{"database_host": "127.0.0.1", "database_port": 5432}"""
