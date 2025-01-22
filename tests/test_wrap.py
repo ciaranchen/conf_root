@@ -1,4 +1,6 @@
 import os.path
+import random
+import string
 import unittest
 from dataclasses import dataclass
 
@@ -9,7 +11,6 @@ class TestWrap(unittest.TestCase):
 
     def __init__(self, methodName="runTest"):
         super().__init__(methodName)
-        self.location = 'config.yml'
 
         @dataclass
         class AppConfig:
@@ -17,6 +18,10 @@ class TestWrap(unittest.TestCase):
 
         self.conf_class = AppConfig
         self.q_location = AppConfig.__qualname__.replace('<locals>.', '') + '.yml'
+
+    def setUp(self):
+        random_string = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
+        self.location = random_string + '.yml'
 
     def tearDown(self):
         # 使用os.remove删除在测试中创建的文件

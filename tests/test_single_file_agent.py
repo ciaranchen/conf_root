@@ -3,7 +3,6 @@ import unittest
 from dataclasses import dataclass
 
 from conf_root import ConfRoot, SingleFileYamlAgent
-from tests.utils import replace_text
 
 
 class TestSingleFileYamlAgent(unittest.TestCase):
@@ -68,7 +67,7 @@ class TestSingleFileYamlAgent(unittest.TestCase):
         self.assertTrue('9527' in content)
         self.assertTrue(self.section_name2 in content)
 
-        replace_text(self.location, '42', '43')
+        self.replace_text(self.location, '42', '43')
         conf2 = self.conf2()
         self.assertEqual(conf2.one_thing, 43)
         self.assertEqual(conf2.another_thing, 1024)

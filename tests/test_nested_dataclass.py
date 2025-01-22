@@ -1,4 +1,6 @@
 import os
+import random
+import string
 import unittest
 from dataclasses import dataclass, field as dataclass_field
 
@@ -19,9 +21,9 @@ class AppConfig:
 
 
 class TestNestedDataclass(unittest.TestCase):
-    def __init__(self, methodName="runTest"):
-        super().__init__(methodName)
-        self.location = 'nested_config.yml'
+    def setUp(self):
+        random_string = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
+        self.location = random_string + '.yml'
 
     def tearDown(self):
         # 这个方法将在每个测试方法结束后运行

@@ -1,7 +1,10 @@
+import logging
 import os.path
 from ruamel.yaml import YAML
 
 from conf_root.agents.BasicAgent import BasicAgent
+
+logger = logging.getLogger(__name__)
 
 
 class YamlAgent(BasicAgent):
@@ -9,9 +12,20 @@ class YamlAgent(BasicAgent):
 
     @staticmethod
     def get_yaml():
+        def type_representer(dumper, data):
+            logger.warning(f'Skip represent type {data}')
+            return dumper.represent_data(None)
+
+        def function_representer(dumper, data):
+            logger.warning(f'Skip represent callable {data}')
+            return dumper.represent_data(None)
+
         yaml = YAML()
         yaml.preserve_quotes = True
         yaml.indent(mapping=2, sequence=4, offset=2)
+
+        yaml.representer.add_representer(type, type_representer)
+        yaml.representer.add_representer(callable, function_representer)
         return yaml
 
     def load(self, cls):
