@@ -10,6 +10,10 @@ logger = logging.getLogger(__name__)
 class BasicAgent:
     default_extension: str = '.undefined'
 
+    @staticmethod
+    def class_name(cls):
+        return cls.__qualname__.replace('<locals>.', '')
+
     @classmethod
     def formalize_filename(cls, filename):
         invalid_chars_pattern = r'[\\/:*?"<>|]'

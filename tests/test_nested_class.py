@@ -10,7 +10,6 @@ from conf_root import ConfRoot
 
 
 @ConfRoot(agent_class=None).config
-@dataclass
 class NestedConfig:
     config1: str = 'nest_config1'
     config2: str = 'nest_config2'
@@ -54,10 +53,10 @@ class TestNestedDataclass(unittest.TestCase):
         self.assertTrue('defined2' in content)
 
     def test_load(self):
-        content = """AppConfig:
-  nc_default:
+        content = """
+nc_default:
     config1: default_load1
-  nc_defined:
+nc_defined:
     config1: load1
     config2: load2
 """

@@ -8,13 +8,13 @@ from pydantic import create_model, model_validator, Field as PydanticField, Base
 from pydantic._internal._model_construction import ModelMetaclass
 
 from conf_root.agents.BasicAgent import BasicAgent
-from conf_root.agents.YamlAgent import SingleFileYamlAgent
+from conf_root.agents.YamlAgent import YamlAgent
 
 logger = logging.getLogger(__name__)
 
 
 class ConfRoot:
-    def __init__(self, agent_class: Optional[Type[BasicAgent]] = SingleFileYamlAgent,
+    def __init__(self, agent_class: Optional[Type[BasicAgent]] = YamlAgent,
                  priority: Literal['file', 'param'] = 'file'):
         self.agent_class = agent_class
         self.priority = priority
@@ -32,7 +32,7 @@ class ConfRoot:
                        for field in dataclass_fields(cls)}
                 )
             if filename is None:
-                filename = self.class_name(cls)
+                filename = BasicAgent.class_name(cls)
 
             class ConfigurationClass(DynamicModel):
                 __CONF_ROOT__ = self
@@ -52,13 +52,11 @@ class ConfRoot:
                         else:
                             file_data.update(param_data)
                             return handler(file_data)
-                    return handler(param_data)
-
-                @model_validator(mode='after')
-                def post_init(_self):
-                    if _self.__CONF_AGENT__:
-                        _self.__CONF_AGENT__.save(_self)
-                    return _self
+                    # 在没有加载时，才进行保存
+                    obj = handler(param_data)
+                    if obj.__CONF_AGENT__:
+                        obj.__CONF_AGENT__.save(obj)
+                    return obj
 
             # 避免在Configuration的__dict__原本类的 __dict__ 上进行更新。
             update_wrapper(ConfigurationClass, cls, updated=[])
@@ -71,24 +69,21 @@ class ConfRoot:
                     agent = _self.__CONF_AGENT__
                     return agent.save(_self)
 
-                ConfigurationClass.save_configuration = save_configuration
+                if not hasattr(ConfigurationClass, 'save_configuration'):
+                    ConfigurationClass.save_configuration = save_configuration
             return ConfigurationClass
 
         if len(args) == 1 and isinstance(args[0], type):
             # 无参数情况下，相当于直接用类的定义调用decorator.
-            # @wrap
+            # @config
             return decorator(args[0], **kwargs)
         if len(args) >= 1:
             # 有args的情况下，取第一个args为 config 名称。
-            # @wrap('config'）
+            # @config('config'）
             return lambda cls: decorator(cls, *args, **kwargs)
         # 无args, 只有kwargs的情况下，直接给出decorator
-        # @wrap() or @wrap(name='config')
+        # @config() or @config(name='config')
         return lambda cls: decorator(cls, **kwargs)
-
-    @staticmethod
-    def class_name(cls):
-        return SingleFileYamlAgent.class_name(cls)
 
     @staticmethod
     def is_config_class(cls_or_instance):
