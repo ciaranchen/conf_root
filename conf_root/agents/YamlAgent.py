@@ -42,10 +42,6 @@ class SingleFileYamlAgent(YamlAgent):
     """
     default_extension: str = '.yml'
 
-    @staticmethod
-    def class_name(cls):
-        return cls.__qualname__.replace('<locals>.', '')
-
     def exist(self, cls) -> bool:
         return self.class_name(cls) in self._load(cls)
 
