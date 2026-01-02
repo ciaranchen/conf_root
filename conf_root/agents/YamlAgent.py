@@ -25,7 +25,7 @@ class YamlAgent(BasicAgent):
         with open(location, encoding='utf-8') as file:
             # 将dict展开为对象。
             data = self.get_yaml().load(file)
-        return data
+        return data if data is not None else {}
 
     def save(self, instance):
         super().save(instance)
