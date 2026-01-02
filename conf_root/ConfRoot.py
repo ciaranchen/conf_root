@@ -9,7 +9,7 @@ from pydantic._internal._model_construction import ModelMetaclass
 
 from conf_root.agents.BasicAgent import BasicAgent
 from conf_root.agents.YamlAgent import YamlAgent
-from conf_root.run_http import run_http, extract_classes_from_file, dataclass_to_wtform
+from conf_root.run_http import run_http, extract_classes_from_file
 
 
 logger = logging.getLogger(__name__)
@@ -164,8 +164,7 @@ class ConfRoot:
 
     @staticmethod
     def serve(classes, host='127.0.0.1', port=8080):
-        forms = {cls: dataclass_to_wtform(cls) for cls in classes}
-        run_http(forms, host=host, port=port)
+        run_http({cls: cls for cls in classes}, host=host, port=port)
 
 
 def main():

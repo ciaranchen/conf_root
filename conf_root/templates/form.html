@@ -11,7 +11,7 @@
 
         .container {
             width: 100%;
-            max-width: 500px;
+            max-width: 800px;
             margin: 50px auto;
             padding: 20px;
             background-color: white;
@@ -23,11 +23,58 @@
             flex-direction: column;
         }
 
-        input, textarea, select {
+        .field-group {
             margin-bottom: 15px;
+        }
+
+        .field-label {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .field-description {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        input[type="email"],
+        textarea,
+        select {
+            width: 100%;
             padding: 10px;
             border: 1px solid #ddd;
             border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        input[type="checkbox"] {
+            margin-right: 10px;
+        }
+
+        .radio-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .radio-option {
+            display: flex;
+            align-items: center;
+        }
+
+        .nested-field {
+            margin-left: 20px;
+            padding-left: 20px;
+            border-left: 2px solid #ddd;
+        }
+
+        .error {
+            color: red;
+            font-size: 0.9em;
+            margin-top: 5px;
         }
 
         button {
@@ -37,10 +84,19 @@
             border: none;
             cursor: pointer;
             border-radius: 4px;
+            margin-top: 10px;
         }
 
         button:hover {
             background-color: #0056b3;
+        }
+
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 20px;
         }
     </style>
 </head>
@@ -48,22 +104,94 @@
 <div class="container">
     <h1>{{ name }}</h1>
     <form method="POST" action="{{ action_url }}">
-        {% for field in form %}
-        <p>
-            {{ field.label }}{% if field.flags.required %}*{% endif %}<br>
-            {{ field(size=20) }}<br>
-            {% for error in field.errors %}
-            <span style="color: red;">[{{ error }}]</span><br>
-            {% endfor %}
-        </p>
+        {% for field in fields %}
+        <div class="field-group">
+            {% if field.is_nested %}
+            <div class="nested-field">
+                <h3>{{ field.name }}</h3>
+                {% for nested_field in field.nested_fields %}
+                <div class="field-group">
+                    {% if nested_field.description %}
+                    <div class="field-description">{{ nested_field.description }}</div>
+                    {% endif %}
+                    <div class="field-label">
+                        {{ nested_field.name }}
+                        {% if nested_field.is_required %}*{% endif %}
+                    </div>
+                    {% if nested_field.choices %}
+                    <div class="radio-group">
+                        {% for choice in nested_field.choices %}
+                        <div class="radio-option">
+                            <input type="radio" name="{{ nested_field.name }}" value="{{ choice }}" 
+                                {% if nested_field.default == choice %}checked{% endif %}>
+                            {{ choice }}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% elif nested_field.type == 'bool' %}
+                    <input type="checkbox" name="{{ nested_field.name }}" 
+                        {% if nested_field.default %}checked{% endif %}>
+                    {% elif nested_field.type == 'int' %}
+                    <input type="number" name="{{ nested_field.name }}" placeholder="{{ nested_field.default }}">
+                    {% elif nested_field.type == 'float' %}
+                    <input type="number" step="0.01" name="{{ nested_field.name }}" placeholder="{{ nested_field.default }}">
+                    {% elif nested_field.type == 'str' %}
+                    <input type="text" name="{{ nested_field.name }}" placeholder="{{ nested_field.default }}">
+                    {% else %}
+                    <input type="text" name="{{ nested_field.name }}" placeholder="{{ nested_field.default }}" disabled>
+                    {% endif %}
+                    {% if errors and nested_field.name in errors %}
+                    <div class="error">{{ errors[nested_field.name] }}</div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            {% if field.description %}
+            <div class="field-description">{{ field.description }}</div>
+            {% endif %}
+            <div class="field-label">
+                {{ field.name }}
+                {% if field.is_required %}*{% endif %}
+            </div>
+            {% if field.choices %}
+            <div class="radio-group">
+                {% for choice in field.choices %}
+                <div class="radio-option">
+                    <input type="radio" name="{{ field.name }}" value="{{ choice }}" 
+                        {% if field.default == choice %}checked{% endif %}>
+                    {{ choice }}
+                </div>
+                {% endfor %}
+            </div>
+            {% elif field.type == 'bool' %}
+            <input type="checkbox" name="{{ field.name }}" 
+                {% if field.default %}checked{% endif %}>
+            {% elif field.type == 'int' %}
+            <input type="number" name="{{ field.name }}" placeholder="{{ field.default }}">
+            {% elif field.type == 'float' %}
+            <input type="number" step="0.01" name="{{ field.name }}" placeholder="{{ field.default }}">
+            {% elif field.type == 'str' %}
+            <input type="text" name="{{ field.name }}" placeholder="{{ field.default }}">
+            {% else %}
+            <input type="text" name="{{ field.name }}" placeholder="{{ field.default }}" disabled>
+            {% endif %}
+            {% if errors and field.name in errors %}
+            <div class="error">{{ errors[field.name] }}</div>
+            {% endif %}
+            {% endif %}
+        </div>
         {% endfor %}
-        <p><input type="submit" value="Submit"></p>
-        {% if msg is not none %}
-        <p>Data: {{ msg['data'] }} <br>
-            Instance: {{ msg['instance'] }} <br>
-            <span style="color: green;">Successful! Saved to: {{ msg['location'] }}</span></p>
-        {% endif %}
+        <button type="submit">Save Configuration</button>
     </form>
+    {% if msg is not none %}
+    <div class="success">
+        <strong>Success!</strong><br>
+        Data: {{ msg['data'] }}<br>
+        Instance: {{ msg['instance'] }}<br>
+        Saved to: {{ msg['location'] }}
+    </div>
+    {% endif %}
 </div>
 </body>
 </html>

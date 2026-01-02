@@ -1,8 +1,8 @@
 import os
 import ast
 import importlib.util
-from dataclasses import fields
-from typing import Dict, Type
+from typing import Dict, Type, Any, List, get_origin, get_args
+from pydantic import BaseModel, ValidationError
 
 import urllib.parse
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -29,53 +29,59 @@ def extract_classes_from_file(file_path):
     return classes
 
 
-def dataclass_to_wtform(dataclass_type):
-    try:
-        from wtforms.validators import DataRequired, Disabled
-        from wtforms import Form, StringField, IntegerField, BooleanField, FloatField, TextAreaField, FormField, SelectField, RadioField
-    except ImportError as e:
-        missing_lib = str(e).split("'")[1]
-        print(f"错误: 缺少必要的依赖库 '{missing_lib}'")
-        print("请使用以下命令安装 web 依赖:")
-        print("  pip install conf_root[web]")
-        print("或者:")
-        print("  pip install wtforms jinja2")
-        exit(1)
+def get_field_info(field_name: str, field_info: Any) -> Dict[str, Any]:
+    """获取字段的元数据信息"""
+    field_type = field_info.annotation
+    field_default = field_info.default
+    
+    # 处理可选类型
+    is_optional = field_info.is_required
+    
+    # 获取字段默认值
+    default_value = None
+    if default_value is None and hasattr(field_info, 'default'):
+        default_value = field_info.default
+    if default_value is None and hasattr(field_default, 'default_factory'):
+        default_value = field_default.default_factory()
 
+    # 获取类型名称
+    type_name = None
+    if hasattr(field_type, '__name__'):
+        type_name = field_type.__name__
+    elif hasattr(field_type, '_name'):
+        type_name = field_type._name
+    
+    return {
+        'name': field_name,
+        'type': type_name,
+        'annotation': field_type,
+        'is_optional': is_optional,
+        'default': default_value,
+        'is_required': not is_optional and default_value is None
+    }
+
+
+def get_model_fields(model_type: Type[BaseModel]) -> List[Dict[str, Any]]:
+    """获取 Pydantic 模型的所有字段信息"""
     from conf_root.ConfRoot import ConfRoot
-
-    class DynamicForm(Form):
-        pass
-
-    for field in fields(dataclass_type):
-        field_name = field.name
-        field_type = field.type
-        field_default = field.default
-
-        # 根据字段类型添加相应的WTForms字段
-        if 'choices' in field.metadata:
-            choices = field.metadata['choices']
-            form_field = RadioField(field_name, choices=choices, validators=[DataRequired()], default=field_default)
-        elif field_type == str:
-            form_field = StringField(field_name, validators=[DataRequired()], default=field_default)
-        elif field_type == int:
-            form_field = IntegerField(field_name, validators=[DataRequired()], default=field_default)
-        elif field_type == bool:
-            form_field = BooleanField(field_name, validators=[DataRequired()], default=field_default)
-        elif field_type == float:
-            form_field = FloatField(field_name, validators=[DataRequired()], default=field_default)
-        elif ConfRoot.is_config_class(field_type):
-            form_field = FormField(dataclass_to_wtform(field_type), field_name, separator='.')
-            pass
+    
+    fields_info = []
+    for field_name, field_info in model_type.model_fields.items():
+        field_data = get_field_info(field_name, field_info)
+        
+        # 检查是否是嵌套的配置类
+        if ConfRoot.is_config_class(field_info.annotation):
+            field_data['is_nested'] = True
+            field_data['nested_fields'] = get_model_fields(field_info.annotation)
         else:
-            form_field = TextAreaField(field_name, validators=[Disabled()], default=f"不支持在线编辑类型 {field_type}")
-            setattr(DynamicForm, "_" + field_name, form_field)
-            continue
-        setattr(DynamicForm, field_name, form_field)
-    return DynamicForm
+            field_data['is_nested'] = False
+        
+        fields_info.append(field_data)
+    
+    return fields_info
 
 
-def make_handler(forms: Dict[Type, Type]):
+def make_handler(models: Dict[Type, Type]):
     try:
         from jinja2 import Environment, FileSystemLoader
     except ImportError as e:
@@ -84,12 +90,12 @@ def make_handler(forms: Dict[Type, Type]):
         print("请使用以下命令安装 web 依赖:")
         print("  pip install conf_root[web]")
         print("或者:")
-        print("  pip install wtforms jinja2")
+        print("  pip install jinja2")
         exit(1)
 
     class RequestHandler(BaseHTTPRequestHandler):
         def __init__(self, request, client_address, server):
-            self.forms = forms
+            self.models = models
             template_path = os.path.join(os.path.dirname(__file__), 'templates')
             self.jinja_env = Environment(loader=FileSystemLoader(template_path))
             super().__init__(request, client_address, server)
@@ -99,34 +105,42 @@ def make_handler(forms: Dict[Type, Type]):
             template = self.jinja_env.get_template('index.html')
             return template.render(names=names, urls=urls, zip=zip)
 
-        def render_form(self, name, form, action_url, msg=None):
+        def render_form(self, name, model, fields, action_url, msg=None, errors=None):
             template = self.jinja_env.get_template('form.html')
-            return template.render(name=name, form=form, action_url=action_url, msg=msg)
+            return template.render(
+                name=name,
+                model=model,
+                fields=fields,
+                action_url=action_url,
+                msg=msg,
+                errors=errors or {}
+            )
 
         def do_GET(self):
             if self.path == '/':
-                names = [cls.__name__ for cls in self.forms.keys()]
+                names = [cls.__name__ for cls in self.models.keys()]
                 response = self.render_index(names)
                 self.send_response(200)
                 self.send_header('Content-type', 'text/html')
                 self.end_headers()
                 self.wfile.write(response.encode('utf-8'))
                 return
-            for cls, form_class in self.forms.items():
-                name = cls.__name__
+            
+            for model in self.models.keys():
+                name = model.__name__
                 action_url = name if name.startswith('/') else '/' + name
                 if self.path == action_url:
-                    # 构造Dataclass
-                    obj = cls()
-                    form = form_class(obj=obj)
-                    response = self.render_form(name, form, action_url)
+                    # 获取模型实例和字段信息
+                    obj = model()
+                    fields = get_model_fields(model)
+                    response = self.render_form(name, obj, fields, action_url)
                     self.send_response(200)
                     self.send_header('Content-type', 'text/html')
                     self.end_headers()
                     self.wfile.write(response.encode('utf-8'))
                     return
 
-            # 如果没有匹配的form。
+            # 如果没有匹配的模型
             self.send_response(404)
             self.end_headers()
 
@@ -136,52 +150,87 @@ def make_handler(forms: Dict[Type, Type]):
             post_data = urllib.parse.parse_qsl(post_data.decode('utf-8'))
             post_data = dict(post_data)
 
-            def set_form_data(form_obj, data):
-                for field_name, values in data.items():
-                    if '.' in field_name:
-                        sub_form_name, sub_field_name = field_name.split('.', 1)
-                        sub_form = getattr(form_obj, sub_form_name)
-                        set_form_data(sub_form, {sub_field_name: values})
-                    else:
-                        form_obj.process(None, data={field_name: values})
+            def parse_value(field_info, value):
+                """根据字段类型解析值"""
+                field_type = field_info['type']
+                if field_type == 'int':
+                    return int(value) if value else None
+                elif field_type == 'float':
+                    return float(value) if value else None
+                elif field_type == 'bool':
+                    return value == 'true' or value == 'on'
+                else:
+                    return value
 
-            for cls, form_class in self.forms.items():
-                name = cls.__name__
+            def build_model_data(model_type, data, prefix=''):
+                """递归构建模型数据"""
+                model_data = {}
+                fields_info = get_model_fields(model_type)
+                
+                for field_info in fields_info:
+                    field_name = field_info['name']
+                    full_name = f"{prefix}{field_name}" if prefix else field_name
+                    
+                    if field_info['is_nested']:
+                        # 处理嵌套模型
+                        nested_data = build_model_data(field_info['annotation'], data, f"{field_name}.")
+                        model_data[field_name] = nested_data
+                    else:
+                        # 处理普通字段
+                        value = data.get(full_name, field_info['default'])
+                        model_data[field_name] = parse_value(field_info, value)
+                
+                return model_data
+
+            for model in self.models.keys():
+                name = model.__name__
                 action_url = name if name.startswith('/') else '/' + name
                 if self.path == action_url:
-                    form = form_class()
-                    set_form_data(form, post_data)
-                    if form.validate():
-                        # 写入instance
-                        instance = cls()
-                        for key, value in form.data.items():
-                            setattr(instance, key, value)
-                        configuration = cls.__CONF_ROOT__
-                        agent = configuration.conf_root.agent
-                        agent.save(configuration, instance)
-                        # 返回结果
+                    fields = get_model_fields(model)
+                    
+                    try:
+                        # 构建模型数据
+                        model_data = build_model_data(model, post_data)
+                        
+                        # 创建并验证模型实例
+                        instance = model(**model_data)
+                        
+                        # 保存配置
+                        agent = model.__CONF_AGENT__
+                        agent.save(instance)
+                        
+                        # 返回成功消息
+                        conf_location = model.__CONF_LOCATION__
                         msg = {
-                            'location': agent.formalize_filename(configuration),
-                            'data': form.data,
+                            'location': agent.formalize_filename(conf_location),
+                            'data': model_data,
                             'instance': instance
                         }
-                        response = self.render_form(name, form, action_url, msg)
-                    else:
-                        response = self.render_form(name, form, action_url)
+                        response = self.render_form(name, instance, fields, action_url, msg=msg)
+                    except ValidationError as e:
+                        # 处理验证错误
+                        errors = {}
+                        for error in e.errors():
+                            field_name = '.'.join(str(loc) for loc in error['loc'])
+                            errors[field_name] = error['msg']
+                        
+                        response = self.render_form(name, model(**model_data), fields, action_url, errors=errors)
+                    
                     self.send_response(200)
                     self.send_header('Content-type', 'text/html')
                     self.end_headers()
                     self.wfile.write(response.encode('utf-8'))
                     return
+            
             self.send_response(404)
             self.end_headers()
 
     return RequestHandler
 
 
-def run_http(forms, host='127.0.0.1', port=8080):
+def run_http(models, host='127.0.0.1', port=8080):
     server_address = (host, port)
-    handler_class = make_handler(forms)
+    handler_class = make_handler(models)
     httpd = HTTPServer(server_address, handler_class)
     print(f'Starting httpd server on http://{host}:{port}/ ...')
     httpd.serve_forever()
