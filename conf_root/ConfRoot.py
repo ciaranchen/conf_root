@@ -28,11 +28,17 @@ class ConfRoot:
             else:
                 if not is_dataclass(cls):
                     cls = dataclass(cls)
-                DynamicModel = create_model(
-                    cls.__name__,
-                    **{field.name: (field.type, field.default) if field.default is not MISSING else (field.type, ...)
-                       for field in dataclass_fields(cls)}
-                )
+                
+                fields_dict = {}
+                for field in dataclass_fields(cls):
+                    if field.default is not MISSING:
+                        fields_dict[field.name] = (field.type, field.default)
+                    elif field.default_factory is not MISSING:
+                        fields_dict[field.name] = (field.type, PydanticField(default_factory=field.default_factory))
+                    else:
+                        fields_dict[field.name] = (field.type, ...)
+                
+                DynamicModel = create_model(cls.__name__, **fields_dict)
             if filename is None:
                 filename = BasicAgent.class_name(cls)
 

@@ -4,27 +4,13 @@ import importlib.util
 from dataclasses import fields
 from typing import Dict, Type
 
-try:
-    from wtforms.validators import DataRequired, Disabled
-    from wtforms import Form, StringField, IntegerField, BooleanField, FloatField, TextAreaField, FormField, SelectField, RadioField
-    from jinja2 import Environment, FileSystemLoader
-except ImportError as e:
-    missing_lib = str(e).split("'")[1]
-    print(f"错误: 缺少必要的依赖库 '{missing_lib}'")
-    print("请使用以下命令安装 web 依赖:")
-    print("  pip install conf_root[web]")
-    print("或者:")
-    print("  pip install wtforms jinja2")
-    exit(1)
-
 import urllib.parse
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
-from conf_root.Configuration import is_config_class
-from conf_root.utils import data2obj
-
 
 def extract_classes_from_file(file_path):
+    from conf_root.ConfRoot import ConfRoot
+    
     with open(file_path, "r", encoding="utf-8") as file:
         file_content = file.read()
 
@@ -39,11 +25,25 @@ def extract_classes_from_file(file_path):
 
     # Load the classes from the module
     classes = [getattr(module, class_name, None) for class_name in classes_name]
-    classes = [cls for cls in classes if cls is not None and is_config_class(cls)]
+    classes = [cls for cls in classes if cls is not None and ConfRoot.is_config_class(cls)]
     return classes
 
 
 def dataclass_to_wtform(dataclass_type):
+    try:
+        from wtforms.validators import DataRequired, Disabled
+        from wtforms import Form, StringField, IntegerField, BooleanField, FloatField, TextAreaField, FormField, SelectField, RadioField
+    except ImportError as e:
+        missing_lib = str(e).split("'")[1]
+        print(f"错误: 缺少必要的依赖库 '{missing_lib}'")
+        print("请使用以下命令安装 web 依赖:")
+        print("  pip install conf_root[web]")
+        print("或者:")
+        print("  pip install wtforms jinja2")
+        exit(1)
+
+    from conf_root.ConfRoot import ConfRoot
+
     class DynamicForm(Form):
         pass
 
@@ -64,7 +64,7 @@ def dataclass_to_wtform(dataclass_type):
             form_field = BooleanField(field_name, validators=[DataRequired()], default=field_default)
         elif field_type == float:
             form_field = FloatField(field_name, validators=[DataRequired()], default=field_default)
-        elif is_config_class(field_type):
+        elif ConfRoot.is_config_class(field_type):
             form_field = FormField(dataclass_to_wtform(field_type), field_name, separator='.')
             pass
         else:
@@ -76,6 +76,17 @@ def dataclass_to_wtform(dataclass_type):
 
 
 def make_handler(forms: Dict[Type, Type]):
+    try:
+        from jinja2 import Environment, FileSystemLoader
+    except ImportError as e:
+        missing_lib = str(e).split("'")[1]
+        print(f"错误: 缺少必要的依赖库 '{missing_lib}'")
+        print("请使用以下命令安装 web 依赖:")
+        print("  pip install conf_root[web]")
+        print("或者:")
+        print("  pip install wtforms jinja2")
+        exit(1)
+
     class RequestHandler(BaseHTTPRequestHandler):
         def __init__(self, request, client_address, server):
             self.forms = forms
@@ -143,7 +154,8 @@ def make_handler(forms: Dict[Type, Type]):
                     if form.validate():
                         # 写入instance
                         instance = cls()
-                        data2obj(instance, form.data)
+                        for key, value in form.data.items():
+                            setattr(instance, key, value)
                         configuration = cls.__CONF_ROOT__
                         agent = configuration.conf_root.agent
                         agent.save(configuration, instance)
