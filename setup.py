@@ -8,9 +8,13 @@ setup(
     version="0.5.0",  # 版本号
     install_requires=[
         "ruamel.yaml>=0.18.6",
-        "wtforms>=3.1.2",
-        "jinja2>=3.1.4"
     ],
+    extras_require={
+        "web": [
+            "wtforms>=3.1.2",
+            "jinja2>=3.1.4"
+        ]
+    },
     author="ciaranchen",
     author_email="ciaranchen@qq.com",
     description="基于dataclass的配置文件取用工具",

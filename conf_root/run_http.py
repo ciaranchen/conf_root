@@ -4,9 +4,19 @@ import importlib.util
 from dataclasses import fields
 from typing import Dict, Type
 
-from wtforms.validators import DataRequired, Disabled
-from wtforms import Form, StringField, IntegerField, BooleanField, FloatField, TextAreaField, FormField, SelectField, RadioField
-from jinja2 import Environment, FileSystemLoader
+try:
+    from wtforms.validators import DataRequired, Disabled
+    from wtforms import Form, StringField, IntegerField, BooleanField, FloatField, TextAreaField, FormField, SelectField, RadioField
+    from jinja2 import Environment, FileSystemLoader
+except ImportError as e:
+    missing_lib = str(e).split("'")[1]
+    print(f"错误: 缺少必要的依赖库 '{missing_lib}'")
+    print("请使用以下命令安装 web 依赖:")
+    print("  pip install conf_root[web]")
+    print("或者:")
+    print("  pip install wtforms jinja2")
+    exit(1)
+
 import urllib.parse
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
